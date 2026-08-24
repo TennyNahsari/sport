@@ -1,0 +1,507 @@
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { exportToCsv } from '../../utils/excelExport';
+
+export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) {
+  const { t } = useLanguage();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState(filterPaymentOnly ? 'unpaid' : '');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  // Proof Modal Viewer State
+  const [viewProofModal, setViewProofModal] = useState(null);
+  const [deletingProof, setDeletingProof] = useState(false);
+
+  // Export Excel Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState(todayStr);
+  const [exportEndDate, setExportEndDate] = useState(todayStr);
+
+  const fetchBookings = () => {
+    setLoading(true);
+    let url = `/api/bookings?search=${encodeURIComponent(searchTerm)}`;
+    if (paymentFilter) url += `&payment_status=${paymentFilter}`;
+    if (statusFilter) url += `&booking_status=${statusFilter}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) setBookings(res.data);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchBookings();
+    setCurrentPage(1);
+  }, [searchTerm, paymentFilter, statusFilter]);
+
+  const handleUpdateStatus = async (id, newBookingStatus, newPaymentStatus) => {
+    try {
+      const payload = {};
+      if (newBookingStatus) payload.booking_status = newBookingStatus;
+      if (newPaymentStatus) payload.payment_status = newPaymentStatus;
+
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setViewProofModal(null);
+        fetchBookings();
+      }
+    } catch (e) {
+      alert('Gagal update status booking');
+    }
+  };
+
+  const handleDeletePaymentProof = async (id) => {
+    if (!confirm('Apakah Staff yakin ingin MENGHAPUS foto bukti pembayaran ini?')) return;
+    setDeletingProof(true);
+
+    try {
+      const res = await fetch(`/api/bookings/${id}/payment-proof`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setViewProofModal(null);
+        fetchBookings();
+      } else {
+        alert(data.message || 'Gagal menghapus bukti pembayaran.');
+      }
+    } catch (e) {
+      alert('Gagal menghapus bukti pembayaran');
+    } finally {
+      setDeletingProof(false);
+    }
+  };
+
+  const handleCancelBooking = async (id) => {
+    if (!confirm('Apakah Staff yakin ingin membatalkan booking ini? (Status akan diubah menjadi Cancelled)')) return;
+    try {
+      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) fetchBookings();
+    } catch (e) {
+      alert('Gagal membatalkan booking');
+    }
+  };
+
+  const handleHardDeleteBooking = async (id, bookingCode) => {
+    if (!confirm(`PERINGATAN: Apakah Staff benar-benar ingin MENGHAPUS PERMANEN booking ${bookingCode} dari database PostgreSQL? Seluruh data booking & foto bukti transfer akan otomatis terhapus.`)) return;
+
+    try {
+      const res = await fetch(`/api/bookings/${id}?permanent=true`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) fetchBookings();
+    } catch (e) {
+      alert('Gagal menghapus booking secara permanen');
+    }
+  };
+
+  const handleExecuteExportExcel = () => {
+    const filteredForExport = bookings.filter(b => {
+      if (!b.booking_date) return true;
+      return b.booking_date >= exportStartDate && b.booking_date <= exportEndDate;
+    });
+
+    if (filteredForExport.length === 0) {
+      alert(`Tidak ada data ${filterPaymentOnly ? 'pembayaran' : 'booking'} pada rentang tanggal ${exportStartDate} s/d ${exportEndDate}`);
+      return;
+    }
+
+    const headers = {
+      booking_code: 'Kode Booking',
+      customer_name: 'Nama Customer',
+      customer_phone: 'No Telephone',
+      customer_email: 'Email',
+      court_name: 'Lapangan',
+      sport_name: 'Cabang Olahraga',
+      booking_date: 'Tanggal Booking',
+      start_time: 'Jam Mulai',
+      end_time: 'Jam Selesai',
+      duration_hours: 'Durasi (Jam)',
+      total_price: 'Total Biaya (Rp)',
+      payment_status: 'Payment Status',
+      booking_status: 'Booking Status'
+    };
+
+    const fileName = filterPaymentOnly ? `Report_Payments_${exportStartDate}_to_${exportEndDate}` : `Report_Bookings_${exportStartDate}_to_${exportEndDate}`;
+    exportToCsv(fileName, filteredForExport, headers);
+    setShowExportModal(false);
+  };
+
+  const getStatusBadgeClass = (statusStr) => {
+    const status = (statusStr || '').toLowerCase();
+    switch (status) {
+      case 'paid':
+        return 'bg-blue-50 text-primary border border-blue-200';
+      case 'unpaid':
+        return 'bg-amber-50 text-amber-600 border border-amber-200';
+      case 'occupied':
+        return 'bg-orange-light text-orange border border-orange/30';
+      case 'finished':
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'available':
+        return 'bg-sportgreen-light text-sportgreen border border-sportgreen/30';
+      case 'cancelled':
+        return 'bg-red-50 text-red-600 border border-red-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
+    }
+  };
+
+  // Calculate Pagination Slices
+  const totalItems = bookings.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentDisplayedBookings = bookings.slice(startIndex, startIndex + itemsPerPage);
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Search & Filter Header */}
+      <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        {/* Search input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          <input
+            type="text"
+            placeholder="Cari kode booking, nama penyewa, atau hp..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-button focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 text-xs border border-slate-200 rounded-button bg-slate-50 font-bold text-navy focus:outline-none"
+          >
+            <option value="">Semua Status Booking</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="occupied">Occupied (Sedang Pakai)</option>
+            <option value="finished">Finished (Selesai)</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          {/* Export Excel Button */}
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="py-2 px-3.5 bg-sportgreen hover:bg-sportgreen-hover text-white rounded-button text-xs font-bold flex items-center space-x-1.5 shadow-md transition-all"
+            title="Export data ke file Excel (.csv)"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>EXPORT EXCEL</span>
+          </button>
+
+          {onOpenManualBooking && (
+            <button
+              onClick={onOpenManualBooking}
+              className="py-2 px-4 bg-primary text-white rounded-button text-xs font-bold flex items-center space-x-1 shadow-md hover:bg-primary-hover transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ {t('btnManualStaff')}</span>
+            </button>
+          )}
+        </div>
+
+      </div>
+
+      {/* Bookings Data Table */}
+      <div className="bg-white rounded-card border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+        {loading ? (
+          <div className="p-8 text-center text-slate-500 font-bold">Memuat daftar booking...</div>
+        ) : (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-navy text-white font-bold">
+                    <th className="p-4">{t('tableBookingCode')}</th>
+                    <th className="p-4">{t('tableCustomer')}</th>
+                    <th className="p-4">{t('tableCourtSport')}</th>
+                    <th className="p-4">{t('tableDateTime')}</th>
+                    <th className="p-4">{t('tableTotalPrice')}</th>
+                    <th className="p-4">{t('tableProof')}</th>
+                    <th className="p-4">{t('tableStatus')}</th>
+                    <th className="p-4 text-center">{t('tableActions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-navy">
+                  {currentDisplayedBookings.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-400">Tidak ada data booking ditemukan.</td>
+                    </tr>
+                  ) : (
+                    currentDisplayedBookings.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50">
+                        
+                        <td className="p-4 font-mono font-bold text-primary">
+                          {b.booking_code}
+                        </td>
+
+                        <td className="p-4">
+                          <div className="font-extrabold">{b.customer_name}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">{b.customer_phone}</div>
+                          {b.customer_email && (
+                            <div className="text-[10px] text-slate-400 font-medium truncate max-w-[145px]">{b.customer_email}</div>
+                          )}
+                        </td>
+
+                        <td className="p-4">
+                          <div className="font-extrabold">{b.court_name}</div>
+                          <div className="text-[10px] text-slate-400 uppercase">{b.sport_name}</div>
+                        </td>
+
+                        <td className="p-4">
+                          <div className="font-bold">{b.booking_date}</div>
+                          <div className="text-[11px] font-bold text-primary">{b.start_time} - {b.end_time} ({b.duration_hours} Jam)</div>
+                        </td>
+
+                        <td className="p-4 font-extrabold text-navy">
+                          Rp {b.total_price.toLocaleString('id-ID')}
+                        </td>
+
+                        {/* Column Bukti Transfer */}
+                        <td className="p-4">
+                          {b.payment_proof ? (
+                            <button
+                              onClick={() => setViewProofModal(b)}
+                              className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 rounded text-[11px] font-extrabold flex items-center gap-1 shadow-2xs"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>{t('btnViewProof')}</span>
+                            </button>
+                          ) : (
+                            <span className="text-slate-400 text-[11px] font-medium italic">Belum Ada</span>
+                          )}
+                        </td>
+
+                        {/* Dropdown Status Booking */}
+                        <td className="p-4">
+                          <select
+                            value={(b.booking_status || 'unpaid').toLowerCase()}
+                            onChange={(e) => handleUpdateStatus(b.id, e.target.value, null)}
+                            className={`px-2.5 py-1.5 rounded text-[11px] font-extrabold uppercase focus:outline-none cursor-pointer ${getStatusBadgeClass(b.booking_status)}`}
+                          >
+                            <option value="unpaid">Unpaid</option>
+                            <option value="paid">Paid</option>
+                            <option value="occupied">Occupied</option>
+                            <option value="finished">Finished</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-4 text-center space-x-2">
+                          {b.booking_status !== 'cancelled' && (
+                            <button
+                              onClick={() => handleCancelBooking(b.id)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-amber-50 text-amber-700 rounded text-[11px] font-bold border border-amber-200"
+                              title="Set Cancelled"
+                            >
+                              {t('btnCancel')}
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleHardDeleteBooking(b.id, b.booking_code)}
+                            className="px-2 py-1 bg-red-50 hover:bg-red-600 hover:text-white text-red-600 rounded text-[11px] font-bold border border-red-200 transition-colors"
+                            title="Hapus Permanen"
+                          >
+                            {t('btnDeletePermanent')}
+                          </button>
+                        </td>
+
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls Footer */}
+            {totalItems > 0 && (
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
+                <div>
+                  Menampilkan <span className="font-bold text-navy">{startIndex + 1}</span> sampai <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> dari <span className="font-bold text-navy">{totalItems}</span> data booking
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="p-1.5 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <span className="font-bold text-navy px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="p-1.5 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Export Excel Filter Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
+          <div className="bg-white rounded-card shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center space-x-2">
+                <FileSpreadsheet className="w-5 h-5 text-sportgreen" />
+                <h3 className="font-extrabold text-navy text-base">Export Data {filterPaymentOnly ? 'Payments' : 'Bookings'} ke Excel</h3>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-navy">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">Pilih rentang tanggal awal dan tanggal akhir data yang ingin diexport:</p>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Tanggal Awal *</label>
+                <input
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-button font-bold text-navy"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Tanggal Akhir *</label>
+                <input
+                  type="date"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-button font-bold text-navy"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end space-x-2 border-t">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 font-bold rounded-button text-slate-700 text-xs"
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={handleExecuteExportExcel}
+                className="px-5 py-2 bg-sportgreen hover:bg-sportgreen-hover text-white font-extrabold rounded-button text-xs shadow-md flex items-center space-x-1.5"
+              >
+                <Download className="w-4 h-4" />
+                <span>DOWNLOAD FILE EXCEL</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Staff View Payment Proof Modal */}
+      {viewProofModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-card shadow-2xl max-w-xl w-full p-6 space-y-4 my-8 max-h-[90vh] flex flex-col justify-between overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-3 shrink-0">
+              <div>
+                <h3 className="font-extrabold text-navy text-base">Bukti Transfer Pembayaran</h3>
+                <p className="text-xs text-slate-500">Kode Booking: <strong className="font-mono text-primary">{viewProofModal.booking_code}</strong> ({viewProofModal.customer_name})</p>
+              </div>
+              <button onClick={() => setViewProofModal(null)} className="text-slate-400 hover:text-navy p-1">
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Scrollable Image Container */}
+            <div className="p-3 border rounded-card bg-slate-950/5 overflow-auto custom-scrollbar max-h-[55vh] flex justify-center items-start">
+              <img
+                src={viewProofModal.payment_proof}
+                alt="Bukti Transfer"
+                className="max-w-full h-auto object-contain rounded shadow-md border border-slate-200 cursor-zoom-in"
+                onClick={() => {
+                  const win = window.open();
+                  if (win) win.document.write(`<img src="${viewProofModal.payment_proof}" style="max-width:100%; height:auto;" />`);
+                }}
+                title="Klik untuk membuka ukuran penuh di tab baru"
+              />
+            </div>
+
+            {/* Modal Footer Controls */}
+            <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t shrink-0">
+              <div className="text-xs text-slate-600 font-semibold">
+                Total Biaya: <span className="font-extrabold text-primary text-sm">Rp {viewProofModal.total_price?.toLocaleString('id-ID')}</span>
+              </div>
+              
+              <div className="flex flex-wrap items-center space-x-2 w-full sm:w-auto justify-end">
+                
+                {/* Tombol Hapus Bukti Pembayaran */}
+                <button
+                  disabled={deletingProof}
+                  onClick={() => handleDeletePaymentProof(viewProofModal.id)}
+                  className="px-3.5 py-2 bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold rounded-button text-xs border border-red-200 flex items-center space-x-1 transition-all"
+                  title="Hapus foto bukti pembayaran ini"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{deletingProof ? 'Deleting...' : 'Hapus Bukti'}</span>
+                </button>
+
+                <button
+                  onClick={() => setViewProofModal(null)}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 font-bold rounded-button text-slate-700 text-xs"
+                >
+                  Tutup
+                </button>
+
+                {viewProofModal.payment_status !== 'paid' && (
+                  <button
+                    onClick={() => handleUpdateStatus(viewProofModal.id, 'paid', 'paid')}
+                    className="px-4 py-2 bg-sportgreen hover:bg-sportgreen-hover text-white font-bold rounded-button text-xs shadow-md"
+                  >
+                    VERIFIKASI & SET PAID
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

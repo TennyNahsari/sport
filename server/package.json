@@ -1,0 +1,17 @@
+{
+  "name": "sportbook-server",
+  "version": "1.0.0",
+  "description": "Sports Court Rental Backend API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.23.0"
+  }
+}
