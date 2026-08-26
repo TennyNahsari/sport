@@ -75,8 +75,8 @@ export default function CustomersTab() {
       
       <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-xl font-extrabold text-navy">Data Pelanggan (Customer Directory)</h3>
-          <p className="text-xs text-slate-500">Riwayat penyewa, total booking, dan total pengeluaran</p>
+          <h3 className="text-xl font-extrabold text-navy">{t('customerDirTitle')}</h3>
+          <p className="text-xs text-slate-500">{t('customerDirSub')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -84,7 +84,7 @@ export default function CustomersTab() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <input
               type="text"
-              placeholder="Cari nama, no hp, atau email..."
+              placeholder={t('searchCustomerPlaceholder')}
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-button focus:outline-none focus:ring-2 focus:ring-primary font-medium"
@@ -97,32 +97,32 @@ export default function CustomersTab() {
             title="Export data pelanggan ke file Excel (.csv)"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>EXPORT EXCEL</span>
+            <span>{t('exportExcel')}</span>
           </button>
         </div>
       </div>
 
       <div className="bg-white rounded-card border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
         {loading ? (
-          <div className="p-8 text-center text-slate-500 font-bold">Memuat data penyewa...</div>
+          <div className="p-8 text-center text-slate-500 font-bold">{t('loadingCustomers')}</div>
         ) : (
           <div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-navy text-white font-bold">
-                    <th className="p-4">Nama Customer</th>
-                    <th className="p-4">No. Telephone</th>
-                    <th className="p-4">Email</th>
-                    <th className="p-4">Total Sesi Booking</th>
-                    <th className="p-4">Total Spent</th>
-                    <th className="p-4 text-center">Aksi Staff</th>
+                    <th className="p-4">{t('tableCustomer')}</th>
+                    <th className="p-4">{t('phone')}</th>
+                    <th className="p-4">{t('email')}</th>
+                    <th className="p-4">{t('totalBookingsLabel')}</th>
+                    <th className="p-4">{t('totalSpentLabel')}</th>
+                    <th className="p-4 text-center">{t('tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-navy">
                   {currentDisplayedCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400">Tidak ada data customer ditemukan.</td>
+                      <td colSpan={6} className="p-8 text-center text-slate-400">{t('noCustomersFound')}</td>
                     </tr>
                   ) : (
                     currentDisplayedCustomers.map((c) => (
@@ -135,7 +135,7 @@ export default function CustomersTab() {
                         </td>
                         <td className="p-4 font-mono font-bold text-slate-700">{c.phone}</td>
                         <td className="p-4 text-slate-500">{c.email || '-'}</td>
-                        <td className="p-4 font-extrabold text-primary">{c.total_bookings} Sesi</td>
+                        <td className="p-4 font-extrabold text-primary">{c.total_bookings} {t('sessions')}</td>
                         <td className="p-4 font-extrabold text-sportgreen">
                           Rp {c.total_spent.toLocaleString('id-ID')}
                         </td>
@@ -146,7 +146,7 @@ export default function CustomersTab() {
                             title="Hapus Customer Permanen"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span>Hapus</span>
+                            <span>{t('btnDeletePermanent')}</span>
                           </button>
                         </td>
                       </tr>
@@ -160,7 +160,7 @@ export default function CustomersTab() {
             {totalItems > 0 && (
               <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
                 <div>
-                  Menampilkan <span className="font-bold text-navy">{startIndex + 1}</span> sampai <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> dari <span className="font-bold text-navy">{totalItems}</span> pelanggan
+                  {t('showingData')} <span className="font-bold text-navy">{startIndex + 1}</span> {t('to')} <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> {t('of')} <span className="font-bold text-navy">{totalItems}</span>
                 </div>
 
                 <div className="flex items-center space-x-2">

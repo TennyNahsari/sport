@@ -107,7 +107,7 @@ export default function CheckBookingModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/80 backdrop-blur-sm">
       
-      {/* Modal Container with Max Height & Vertical Flex */}
+      {/* Modal Container with Max Height & Vertical Flex for Mobile Responsiveness */}
       <div className="bg-white rounded-card shadow-2xl max-w-lg w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         
         {/* Fixed Header */}
@@ -127,7 +127,7 @@ export default function CheckBookingModal({ onClose }) {
           {/* Search Form */}
           <form onSubmit={handleSearch} className="space-y-2">
             <label className="block text-xs font-bold text-slate-700">
-              {t('bookingCodeLabel')} (<span className="text-primary font-mono font-bold">SB-1001</span>) / Phone:
+              {t('bookingCodeLabel')} (<span className="text-primary font-mono font-bold">SB-1001</span>) / {t('phone')}:
             </label>
             <div className="flex space-x-2">
               <input
@@ -144,7 +144,7 @@ export default function CheckBookingModal({ onClose }) {
                 className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-extrabold rounded-button shadow-md flex items-center space-x-1 shrink-0"
               >
                 {loading ? (
-                  <span>Searching...</span>
+                  <span>{t('searching')}</span>
                 ) : (
                   <>
                     <Search className="w-4 h-4" />
@@ -207,7 +207,7 @@ export default function CheckBookingModal({ onClose }) {
 
                 {/* Items List */}
                 <div className="space-y-1.5 pt-0.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Item Lapangan Disewa:</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t('rentedCourtsList')}</span>
                   {(bookingData.items && bookingData.items.length > 0 ? bookingData.items : [bookingData]).map((item, idx) => (
                     <div key={idx} className="bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center text-xs">
                       <div>
@@ -235,7 +235,7 @@ export default function CheckBookingModal({ onClose }) {
                   <div className="bg-slate-900 text-white p-3.5 rounded-card text-xs space-y-3">
                     <div className="flex items-center space-x-2 font-bold text-xs text-primary-light">
                       <CreditCard className="w-4 h-4 text-primary" />
-                      <span>Rekening Pembayaran Venue</span>
+                      <span>{t('bankPaymentDetails')}</span>
                     </div>
                     
                     <div className="flex items-center justify-between bg-slate-800 p-2 rounded-button">
@@ -258,7 +258,7 @@ export default function CheckBookingModal({ onClose }) {
                       <div className="pt-2 border-t border-slate-800 space-y-1.5">
                         <div className="flex items-center space-x-1.5 font-bold text-xs text-sportgreen">
                           <QrCode className="w-4 h-4" />
-                          <span>Scan QRIS</span>
+                          <span>{t('scanQris')}</span>
                         </div>
                         <div className="bg-slate-800 p-2.5 rounded-button text-center space-y-1">
                           <img
@@ -300,8 +300,8 @@ export default function CheckBookingModal({ onClose }) {
                       <div className="p-2 border rounded-button bg-slate-50 flex items-center space-x-3 max-h-28 overflow-hidden">
                         <img src={proofInput} alt="Bukti Transfer" className="w-16 h-16 object-cover rounded border shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs text-slate-700 font-bold block truncate">Bukti Transfer Ready</span>
-                          <span className="text-[10px] text-sportgreen font-semibold">Klik tombol di bawah untuk unggah</span>
+                          <span className="text-xs text-slate-700 font-bold block truncate">{t('proofReadyMsg')}</span>
+                          <span className="text-[10px] text-sportgreen font-semibold">{t('proofReadySub')}</span>
                         </div>
                       </div>
                     )}
@@ -312,7 +312,7 @@ export default function CheckBookingModal({ onClose }) {
                       className="w-full py-2.5 bg-sportgreen hover:bg-sportgreen-hover text-white text-xs font-extrabold rounded-button shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 transition-all"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>{uploadingProof ? 'Uploading...' : t('btnUploadProof')}</span>
+                      <span>{uploadingProof ? t('uploadingProofMsg') : t('btnUploadProof')}</span>
                     </button>
                   </form>
 

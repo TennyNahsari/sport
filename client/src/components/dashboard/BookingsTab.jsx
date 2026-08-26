@@ -205,7 +205,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Cari kode booking, nama penyewa, atau hp..."
+            placeholder={t('searchBookingsPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-button focus:outline-none focus:ring-2 focus:ring-primary font-medium"
@@ -219,11 +219,11 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 text-xs border border-slate-200 rounded-button bg-slate-50 font-bold text-navy focus:outline-none"
           >
-            <option value="">Semua Status Booking</option>
+            <option value="">{t('allBookingStatus')}</option>
             <option value="unpaid">Unpaid</option>
             <option value="paid">Paid</option>
-            <option value="occupied">Occupied (Sedang Pakai)</option>
-            <option value="finished">Finished (Selesai)</option>
+            <option value="occupied">Occupied</option>
+            <option value="finished">Finished</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
@@ -234,7 +234,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             title="Export data ke file Excel (.csv)"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>EXPORT EXCEL</span>
+            <span>{t('exportExcel')}</span>
           </button>
 
           {onOpenManualBooking && (
@@ -253,7 +253,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
       {/* Bookings Data Table */}
       <div className="bg-white rounded-card border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
         {loading ? (
-          <div className="p-8 text-center text-slate-500 font-bold">Memuat daftar booking...</div>
+          <div className="p-8 text-center text-slate-500 font-bold">{t('loadingCalendar')}</div>
         ) : (
           <div>
             <div className="overflow-x-auto">
@@ -273,7 +273,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                 <tbody className="divide-y divide-slate-100 font-medium text-navy">
                   {currentDisplayedBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">Tidak ada data booking ditemukan.</td>
+                      <td colSpan={8} className="p-8 text-center text-slate-400">{t('noBookingsFound')}</td>
                     </tr>
                   ) : (
                     currentDisplayedBookings.map((b) => (
@@ -316,7 +316,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                           {b.items && b.items.length > 1 ? (
                             <div className="space-y-2">
                               <span className="inline-block text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                Rincian Jam per Lapangan
+                                Rincian Jam
                               </span>
                               {b.items.map((item, idx) => (
                                 <div key={idx} className="border-b border-slate-100 pb-1.5 last:border-b-0">
@@ -348,7 +348,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                               <span>{t('btnViewProof')}</span>
                             </button>
                           ) : (
-                            <span className="text-slate-400 text-[11px] font-medium italic">Belum Ada</span>
+                            <span className="text-slate-400 text-[11px] font-medium italic">-</span>
                           )}
                         </td>
 
@@ -399,7 +399,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             {totalItems > 0 && (
               <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
                 <div>
-                  Menampilkan <span className="font-bold text-navy">{startIndex + 1}</span> sampai <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> dari <span className="font-bold text-navy">{totalItems}</span> data booking
+                  {t('showingData')} <span className="font-bold text-navy">{startIndex + 1}</span> {t('to')} <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> {t('of')} <span className="font-bold text-navy">{totalItems}</span> {t('bookingsCount')}
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -436,18 +436,16 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-sportgreen" />
-                <h3 className="font-extrabold text-navy text-base">Export Data {filterPaymentOnly ? 'Payments' : 'Bookings'} ke Excel</h3>
+                <h3 className="font-extrabold text-navy text-base">{t('exportModalTitle')}</h3>
               </div>
               <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-navy">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 font-medium">Pilih rentang tanggal awal dan tanggal akhir data yang ingin diexport:</p>
-
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Tanggal Awal *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('exportDateStart')}</label>
                 <input
                   type="date"
                   value={exportStartDate}
@@ -457,7 +455,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Tanggal Akhir *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('exportDateEnd')}</label>
                 <input
                   type="date"
                   value={exportEndDate}
@@ -472,7 +470,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                 onClick={() => setShowExportModal(false)}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 font-bold rounded-button text-slate-700 text-xs"
               >
-                Batal
+                {t('btnCancel')}
               </button>
 
               <button
@@ -480,7 +478,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                 className="px-5 py-2 bg-sportgreen hover:bg-sportgreen-hover text-white font-extrabold rounded-button text-xs shadow-md flex items-center space-x-1.5"
               >
                 <Download className="w-4 h-4" />
-                <span>DOWNLOAD FILE EXCEL</span>
+                <span>{t('downloadExcelBtn')}</span>
               </button>
             </div>
 
@@ -496,8 +494,8 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             {/* Header */}
             <div className="flex items-center justify-between border-b pb-3 shrink-0">
               <div>
-                <h3 className="font-extrabold text-navy text-base">Bukti Transfer Pembayaran</h3>
-                <p className="text-xs text-slate-500">Kode Booking: <strong className="font-mono text-primary">{viewProofModal.booking_code}</strong> ({viewProofModal.customer_name})</p>
+                <h3 className="font-extrabold text-navy text-base">{t('transferProofModalTitle')}</h3>
+                <p className="text-xs text-slate-500">{t('tableBookingCode')}: <strong className="font-mono text-primary">{viewProofModal.booking_code}</strong> ({viewProofModal.customer_name})</p>
               </div>
               <button onClick={() => setViewProofModal(null)} className="text-slate-400 hover:text-navy p-1">
                 <XCircle className="w-6 h-6" />
@@ -521,7 +519,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
             {/* Modal Footer Controls */}
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t shrink-0">
               <div className="text-xs text-slate-600 font-semibold">
-                Total Biaya: <span className="font-extrabold text-primary text-sm">Rp {viewProofModal.total_price?.toLocaleString('id-ID')}</span>
+                {t('tableTotalPrice')}: <span className="font-extrabold text-primary text-sm">Rp {viewProofModal.total_price?.toLocaleString('id-ID')}</span>
               </div>
               
               <div className="flex flex-wrap items-center space-x-2 w-full sm:w-auto justify-end">
@@ -534,14 +532,14 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                   title="Hapus foto bukti pembayaran ini"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{deletingProof ? 'Deleting...' : 'Hapus Bukti'}</span>
+                  <span>{deletingProof ? 'Deleting...' : t('deleteProofBtn')}</span>
                 </button>
 
                 <button
                   onClick={() => setViewProofModal(null)}
                   className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 font-bold rounded-button text-slate-700 text-xs"
                 >
-                  Tutup
+                  {t('btnClose')}
                 </button>
 
                 {viewProofModal.payment_status !== 'paid' && (
@@ -549,7 +547,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                     onClick={() => handleUpdateStatus(viewProofModal.id, 'paid', 'paid')}
                     className="px-4 py-2 bg-sportgreen hover:bg-sportgreen-hover text-white font-bold rounded-button text-xs shadow-md"
                   >
-                    VERIFIKASI & SET PAID
+                    {t('verifySetPaidBtn')}
                   </button>
                 )}
               </div>

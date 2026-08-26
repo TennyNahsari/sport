@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Edit3, Trash2, ShieldAlert, CheckCircle, XCircle, FileSpreadsheet, Download } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 
 export default function CourtsTab() {
+  const { t } = useLanguage();
   const [courts, setCourts] = useState([]);
   const [sports, setSports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,35 +110,35 @@ export default function CourtsTab() {
     <div className="space-y-6">
       
       {/* Top Header */}
-      <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-xl font-extrabold text-navy">Pengelolaan Lapangan (Court Management)</h3>
-          <p className="text-xs text-slate-500">Kelola daftar lapangan, harga per jam, foto, dan status aktif</p>
+          <h3 className="text-xl font-extrabold text-navy">{t('courtMgmtTitle')}</h3>
+          <p className="text-xs text-slate-500">{t('courtMgmtSub')}</p>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={handleExportExcel}
-            className="py-2.5 px-4 bg-sportgreen hover:bg-sportgreen-hover text-white text-xs font-bold rounded-button shadow-md flex items-center space-x-1.5 transition-all"
+            className="py-2.5 px-4 bg-sportgreen hover:bg-sportgreen-hover text-white text-xs font-bold rounded-button shadow-md flex items-center space-x-1.5 transition-all shrink-0"
             title="Export data lapangan ke file Excel (.csv)"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>EXPORT EXCEL</span>
+            <span>{t('exportExcel')}</span>
           </button>
 
           <button
             onClick={handleOpenAdd}
-            className="py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-button shadow-md flex items-center space-x-2 transition-all"
+            className="py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-button shadow-md flex items-center space-x-2 transition-all shrink-0"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>TAMBAH LAPANGAN BARU</span>
+            <span>{t('addNewCourtBtn')}</span>
           </button>
         </div>
       </div>
 
       {/* Courts Grid */}
       {loading ? (
-        <div className="p-8 text-center text-slate-500 font-bold bg-white rounded-card border">Memuat daftar lapangan...</div>
+        <div className="p-8 text-center text-slate-500 font-bold bg-white rounded-card border">{t('loadingCourts')}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courts.map((court) => (
@@ -166,7 +168,7 @@ export default function CourtsTab() {
                   <div>
                     <h4 className="font-extrabold text-navy text-lg">{court.name}</h4>
                     <p className="text-primary font-extrabold text-sm mt-0.5">
-                      Rp {court.price_per_hour.toLocaleString('id-ID')} <span className="text-xs text-slate-400 font-normal">/ jam</span>
+                      Rp {court.price_per_hour.toLocaleString('id-ID')} <span className="text-xs text-slate-400 font-normal">{t('perHour')}</span>
                     </p>
                   </div>
 
@@ -196,7 +198,7 @@ export default function CourtsTab() {
                   className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-button border border-red-200 flex items-center space-x-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Hapus</span>
+                  <span>{t('btnDeletePermanent')}</span>
                 </button>
               </div>
 
@@ -208,14 +210,14 @@ export default function CourtsTab() {
       {/* Add / Edit Court Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-          <div className="bg-white rounded-card shadow-2xl max-w-md w-full p-6 space-y-4">
+          <div className="bg-white rounded-card shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <h3 className="text-lg font-extrabold text-navy border-b pb-3">
-              {editingCourt ? 'Edit Data Lapangan' : 'Tambah Lapangan Baru'}
+              {editingCourt ? t('editCourtTitle') : t('addNewCourtTitle')}
             </h3>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Cabang Olahraga *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('sportCategoryLabel')}</label>
                 <select
                   value={sportId}
                   onChange={(e) => setSportId(e.target.value)}
@@ -228,11 +230,11 @@ export default function CourtsTab() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Nama Lapangan *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('courtNameLabel')}</label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Badminton Court 01"
+                  placeholder="Badminton Court 01"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-button font-bold text-navy"
@@ -240,7 +242,7 @@ export default function CourtsTab() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Harga Per Jam (Rp) *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('pricePerHourLabel')}</label>
                 <input
                   type="number"
                   required
@@ -251,7 +253,7 @@ export default function CourtsTab() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">URL Foto Lapangan</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('imageUrlLabel')}</label>
                 <input
                   type="url"
                   value={imageUrl}
@@ -261,7 +263,7 @@ export default function CourtsTab() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Fasilitas (Pisahkan dengan koma)</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('facilitiesCommaLabel')}</label>
                 <input
                   type="text"
                   value={facilitiesStr}
@@ -271,14 +273,14 @@ export default function CourtsTab() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Status Lapangan</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('courtStatusLabel')}</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-button font-bold text-navy"
                 >
-                  <option value="active">Active (Siap Sewa)</option>
-                  <option value="maintenance">Maintenance (Perbaikan)</option>
+                  <option value="active">{t('activeStatus')}</option>
+                  <option value="maintenance">{t('maintenanceStatus')}</option>
                 </select>
               </div>
 
@@ -288,13 +290,13 @@ export default function CourtsTab() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 bg-slate-100 font-bold rounded-button text-slate-700"
                 >
-                  Batal
+                  {t('btnCancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 bg-primary hover:bg-primary-hover text-white font-extrabold rounded-button shadow-md"
                 >
-                  Simpan Lapangan
+                  {t('saveCourtBtn')}
                 </button>
               </div>
 

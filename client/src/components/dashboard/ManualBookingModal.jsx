@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, AlertTriangle, ShieldCheck, User, Phone, Calendar, Clock } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function ManualBookingModal({ onClose }) {
+  const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [courts, setCourts] = useState([]);
@@ -66,30 +68,30 @@ export default function ManualBookingModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-      <div className="bg-white rounded-card shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/80 backdrop-blur-sm">
+      <div className="bg-white rounded-card shadow-2xl max-w-lg w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         
-        <div className="bg-navy text-white px-6 py-4 flex items-center justify-between">
+        <div className="shrink-0 bg-navy text-white px-5 sm:px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-primary" />
-            <h3 className="font-extrabold text-base">Booking Manual (Input Staff / On-site)</h3>
+            <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+            <h3 className="font-extrabold text-sm sm:text-base">{t('manualBookingTitle')}</h3>
           </div>
           <button onClick={onClose} className="p-1 rounded bg-slate-800 hover:bg-slate-700">
             <X className="w-5 h-5 text-slate-300" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6">
           {success ? (
             <div className="text-center py-6 space-y-4">
               <CheckCircle2 className="w-12 h-12 text-sportgreen mx-auto" />
-              <h4 className="font-extrabold text-navy text-lg">Booking Manual Berhasil Dibuat!</h4>
-              <p className="text-xs text-slate-500">Jadwal telah diperbarui di sistem dan kalender visual.</p>
+              <h4 className="font-extrabold text-navy text-lg">{t('manualBookingSuccessTitle')}</h4>
+              <p className="text-xs text-slate-500">{t('manualBookingSuccessSub')}</p>
               <button
                 onClick={onClose}
                 className="w-full py-2.5 bg-navy text-white text-xs font-bold rounded-button"
               >
-                TUTUP
+                {t('btnClose')}
               </button>
             </div>
           ) : (
@@ -103,7 +105,7 @@ export default function ManualBookingModal({ onClose }) {
               )}
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Pilih Lapangan *</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('selectCourtLabel')}</label>
                 <select
                   value={selectedCourtId}
                   onChange={(e) => setSelectedCourtId(e.target.value)}
@@ -117,9 +119,9 @@ export default function ManualBookingModal({ onClose }) {
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Tanggal</label>
+                  <label className="block font-bold text-slate-700 mb-1">{t('labelDate')}</label>
                   <input
                     type="date"
                     required
@@ -129,7 +131,7 @@ export default function ManualBookingModal({ onClose }) {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jam Mulai</label>
+                  <label className="block font-bold text-slate-700 mb-1">{t('labelStartTime')}</label>
                   <select
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
@@ -142,35 +144,35 @@ export default function ManualBookingModal({ onClose }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Durasi</label>
+                  <label className="block font-bold text-slate-700 mb-1">{t('labelDuration')}</label>
                   <select
                     value={durationHours}
                     onChange={(e) => setDurationHours(e.target.value)}
                     className="w-full px-3 py-2 border rounded-button font-bold text-navy"
                   >
-                    <option value={1}>1 Jam</option>
-                    <option value={2}>2 Jam</option>
-                    <option value={3}>3 Jam</option>
+                    <option value={1}>{t('duration1')}</option>
+                    <option value={2}>{t('duration2')}</option>
+                    <option value={3}>{t('duration3')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-3 pt-2 border-t">
-                <span className="font-extrabold text-navy block">Data Customer (Walk-in / Telepon)</span>
+                <span className="font-extrabold text-navy block">{t('custDataManualTitle')}</span>
                 <div>
-                  <label className="block font-semibold text-slate-600 mb-1">Nama Customer *</label>
+                  <label className="block font-semibold text-slate-600 mb-1">{t('custNameLabel')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Nama lengkap"
+                    placeholder="Tenny"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     className="w-full px-3 py-2 border rounded-button font-medium"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-600 mb-1">No HP / WhatsApp *</label>
+                    <label className="block font-semibold text-slate-600 mb-1">{t('phone')}</label>
                     <input
                       inputMode="numeric"
                       pattern="[0-9]*"
@@ -181,7 +183,7 @@ export default function ManualBookingModal({ onClose }) {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-600 mb-1">Status Pembayaran</label>
+                    <label className="block font-semibold text-slate-600 mb-1">{t('paymentStatusLabel')}</label>
                     <select
                       value={paymentStatus}
                       onChange={(e) => setPaymentStatus(e.target.value)}
@@ -200,14 +202,14 @@ export default function ManualBookingModal({ onClose }) {
                   onClick={onClose}
                   className="px-4 py-2 bg-slate-100 font-bold rounded-button text-slate-600"
                 >
-                  Batal
+                  {t('btnCancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
                   className="px-5 py-2 bg-primary text-white font-extrabold rounded-button shadow-md"
                 >
-                  {loading ? 'Menyimpan...' : 'SIMPAN BOOKING MANUAL'}
+                  {loading ? t('savingManualBooking') : t('btnSaveManualBooking')}
                 </button>
               </div>
 

@@ -71,13 +71,13 @@ export default function AvailabilityGrid({ courts, availabilityMap, selectedDate
                           {isAvailable ? (
                             <button
                               onClick={() => onSelectSlot(court, slot || { time: hour, endTime: `${parseInt(hour) + 1}:00` })}
-                              className="w-full py-2 px-1 rounded-md bg-sportgreen-light hover:bg-sportgreen text-sportgreen hover:text-white font-bold text-[10px] sm:text-[11px] transition-all border border-sportgreen/20"
+                              className="w-full py-2 px-1 rounded-md bg-sportgreen-light hover:bg-sportgreen text-sportgreen hover:text-white font-bold text-[10px] sm:text-[11px] transition-all border border-sportgreen/20 cursor-pointer"
                             >
-                              Available
+                              {t('statusAvailable')}
                             </button>
                           ) : (
                             <span className="inline-block w-full py-2 px-1 rounded-md bg-slate-100 text-slate-400 font-bold text-[10px] sm:text-[11px] cursor-not-allowed">
-                              Booked
+                              {t('statusBooked')}
                             </span>
                           )}
                         </td>

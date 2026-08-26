@@ -44,7 +44,7 @@ export default function SettingsTab() {
         setQrisBase64('');
       }
     } catch (err) {
-      setErrorMsg('Gagal memuat pengaturan: ' + err.message);
+      setErrorMsg('Failed to load settings: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export default function SettingsTab() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Silakan pilih file gambar (PNG, JPG, JPEG, WebP)');
+      alert('Select an image file (PNG, JPG, JPEG, WebP)');
       return;
     }
 
@@ -90,21 +90,21 @@ export default function SettingsTab() {
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
 
-      setSuccessMsg(data.message || 'Pengaturan berhasil disimpan!');
+      setSuccessMsg(data.message || 'Settings saved successfully!');
       if (data.data) {
         setQrisImageUrl(data.data.qris_image_url || '');
         setQrisPreview(data.data.qris_image_url || '');
         setQrisBase64('');
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Gagal menyimpan pengaturan.');
+      setErrorMsg(err.message || 'Failed to save settings.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteQris = async () => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus gambar QRIS? File gambar lama di server akan dihapus permanen.')) {
+    if (!window.confirm('Delete QRIS image permanently from server?')) {
       return;
     }
 
@@ -131,9 +131,9 @@ export default function SettingsTab() {
       setQrisImageUrl('');
       setQrisPreview('');
       setQrisBase64('');
-      setSuccessMsg('Gambar QRIS berhasil dihapus dari server!');
+      setSuccessMsg('QRIS image deleted successfully!');
     } catch (err) {
-      setErrorMsg('Gagal menghapus QRIS: ' + err.message);
+      setErrorMsg('Failed to delete QRIS: ' + err.message);
     } finally {
       setDeletingQris(false);
     }
@@ -143,7 +143,7 @@ export default function SettingsTab() {
     return (
       <div className="bg-white p-8 rounded-card border border-slate-200 text-center py-16">
         <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-3" />
-        <p className="text-xs text-slate-500 font-bold">Memuat Pengaturan Venue...</p>
+        <p className="text-xs text-slate-500 font-bold">Loading Venue Settings...</p>
       </div>
     );
   }
@@ -156,11 +156,11 @@ export default function SettingsTab() {
         <div>
           <div className="flex items-center space-x-2 text-sportgreen text-xs font-bold uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4" />
-            <span>Venue Payment Configuration</span>
+            <span>{t('venuePaymentConfig')}</span>
           </div>
-          <h2 className="text-xl font-extrabold text-white">Pengaturan Metode Pembayaran</h2>
+          <h2 className="text-xl font-extrabold text-white">{t('paymentSettingsHeading')}</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Atur informasi Nomor Rekening Bank dan Gambar QRIS venue untuk transaksi pembayaran customer.
+            {t('paymentSettingsSub')}
           </p>
         </div>
       </div>
@@ -189,14 +189,14 @@ export default function SettingsTab() {
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-navy text-base">Informasi Rekening Bank Venue</h3>
-              <p className="text-[11px] text-slate-500">Nomor rekening transfer yang akan ditampilkan pada tiket booking customer.</p>
+              <h3 className="font-extrabold text-navy text-base">{t('bankInfoHeading')}</h3>
+              <p className="text-[11px] text-slate-500">{t('bankInfoSub')}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Bank *</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('bankNameField')}</label>
               <input
                 type="text"
                 required
@@ -208,7 +208,7 @@ export default function SettingsTab() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nomor Rekening *</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('accountNumberField')}</label>
               <input
                 type="text"
                 required
@@ -220,7 +220,7 @@ export default function SettingsTab() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Atas Nama (Pemilik) *</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('accountHolderField')}</label>
               <input
                 type="text"
                 required
@@ -240,13 +240,13 @@ export default function SettingsTab() {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-navy text-base">Nomor WhatsApp Support / Chat Live</h3>
-              <p className="text-[11px] text-slate-500">Nomor WhatsApp ini digunakan untuk tombol melayang (Floating Widget) di Beranda Utama & konfirmasi pembayaran.</p>
+              <h3 className="font-extrabold text-navy text-base">{t('waSupportHeading')}</h3>
+              <p className="text-[11px] text-slate-500">{t('waSupportSub')}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nomor WhatsApp Admin (Kode Negara 62...) *</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('waAdminField')}</label>
             <input
               type="text"
               required
@@ -255,24 +255,23 @@ export default function SettingsTab() {
               onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9]/g, ''))}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-mono font-bold text-navy focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Format angka saja diawali kode negara. Contoh: 6281234567890 (bukan 0812...)</p>
           </div>
         </div>
 
-        {/* SECTION 2: QRIS SETTINGS & IMAGE MANAGEMENT */}
+        {/* SECTION 3: QRIS SETTINGS & IMAGE MANAGEMENT */}
         <div className="bg-white p-6 rounded-card border border-slate-200 shadow-sm space-y-5">
           <div className="flex items-center space-x-2.5 border-b border-slate-100 pb-3">
             <div className="w-9 h-9 rounded-lg bg-sportgreen-light text-sportgreen flex items-center justify-center font-bold">
               <QrCode className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-navy text-base">Informasi & Barcode QRIS</h3>
-              <p className="text-[11px] text-slate-500">Kelola gambar QRIS venue yang digunakan customer untuk pembayaran digital instant.</p>
+              <h3 className="font-extrabold text-navy text-base">{t('qrisInfoHeading')}</h3>
+              <p className="text-[11px] text-slate-500">{t('qrisInfoSub')}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Merchant / Keterangan QRIS</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('merchantNameField')}</label>
             <input
               type="text"
               placeholder="SportBook Venue QRIS (GoPay, OVO, Dana, ShopeePay, Mobile Banking)"
@@ -284,7 +283,7 @@ export default function SettingsTab() {
 
           {/* QRIS Image Area */}
           <div className="space-y-3 pt-2">
-            <span className="block text-xs font-bold text-slate-700 uppercase">Gambar QRIS Active</span>
+            <span className="block text-xs font-bold text-slate-700 uppercase">{t('activeQrisImage')}</span>
 
             {qrisPreview ? (
               <div className="bg-slate-50 border border-slate-200 rounded-card p-5 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -297,22 +296,19 @@ export default function SettingsTab() {
                       className="w-44 h-44 object-contain rounded"
                     />
                     <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-sportgreen text-white text-[9px] font-extrabold shadow-sm">
-                      AKTIF
+                      ACTIVE
                     </span>
                   </div>
                   <div className="text-center sm:text-left space-y-1">
                     <h4 className="font-extrabold text-navy text-sm">{qrisMerchantName || 'QRIS Venue Active'}</h4>
-                    <p className="text-xs text-slate-500">Status: Gambar QRIS tersimpan di server.</p>
-                    <p className="text-[11px] text-slate-400 max-w-xs">
-                      Customer dapat langsung melakukan scan barcode QRIS ini dari aplikasi e-wallet & mobile banking.
-                    </p>
+                    <p className="text-xs text-slate-500">Status: QRIS image stored on server.</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2.5 w-full sm:w-auto">
                   <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-button shadow-sm flex items-center justify-center space-x-2 cursor-pointer transition-colors">
                     <Upload className="w-4 h-4" />
-                    <span>{qrisBase64 ? 'Ganti File Pilihan' : 'Ganti Gambar QRIS'}</span>
+                    <span>{t('changeQrisBtn')}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -328,7 +324,7 @@ export default function SettingsTab() {
                     className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-button border border-red-200 flex items-center justify-center space-x-2 transition-colors disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
-                    <span>{deletingQris ? 'Deleting...' : 'Hapus QRIS'}</span>
+                    <span>{deletingQris ? 'Deleting...' : t('deleteQrisBtn')}</span>
                   </button>
                 </div>
 
@@ -336,13 +332,13 @@ export default function SettingsTab() {
             ) : (
               <div className="border-2 border-dashed border-slate-300 rounded-card p-8 text-center bg-slate-50 hover:bg-slate-100/80 transition-colors">
                 <QrCode className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                <h4 className="font-extrabold text-navy text-sm">Belum Ada Gambar QRIS</h4>
+                <h4 className="font-extrabold text-navy text-sm">{t('noQrisTitle')}</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-                  Unggah file gambar kode QRIS venue Anda (format PNG, JPG, atau WebP).
+                  {t('noQrisSub')}
                 </p>
                 <label className="inline-flex items-center space-x-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-button shadow-md cursor-pointer transition-colors">
                   <Upload className="w-4 h-4" />
-                  <span>Upload Gambar QRIS Baru</span>
+                  <span>{t('uploadNewQrisBtn')}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -365,12 +361,12 @@ export default function SettingsTab() {
             {saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Menyimpan...</span>
+                <span>{t('savingSettingsMsg')}</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>SIMPAN PENGATURAN PEMBAYARAN</span>
+                <span>{t('savePaymentSettingsBtn')}</span>
               </>
             )}
           </button>

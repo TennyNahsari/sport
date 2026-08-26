@@ -46,6 +46,7 @@ export const translations = {
     perHour: '/ jam',
     btnBookSelectDate: 'PILIH TANGGAL & BOOKING',
     noCourtsMatch: 'Tidak ada lapangan yang cocok dengan filter saat ini.',
+    availabilityFor: 'Ketersediaan',
 
     // Availability UI & Legend
     availTag: 'Time Slot Grid',
@@ -55,6 +56,8 @@ export const translations = {
     availLegendSelected: '🔵 Dipilih (Selected)',
     availLegendBooked: '⚪ Terisi (Booked)',
     tableCourtHeader: 'Lapangan / Waktu',
+    statusAvailable: 'Available',
+    statusBooked: 'Booked',
 
     // Why Choose Us
     whyUsTag: 'Keunggulan SportBook',
@@ -68,6 +71,12 @@ export const translations = {
     feat3Desc: 'Pencahayaan LED profesional, lantai anti-slip, AC dingin, serta ruang ganti & shower bersih.',
     feat4Title: 'Jam Operasional Panjang',
     feat4Desc: 'Buka setiap hari mulai pukul 08:00 sampai 23:00 WIB untuk memenuhi jadwal olahraga favoritmu.',
+
+    // Footer & WA
+    footerDesc: 'Find Your Court. Book Your Game. Platform reservasi lapangan olahraga paling modern, cepat, dan tanpa ribet.',
+    footerCustomerService: 'Layanan Customer',
+    footerContactUs: 'Hubungi Kami',
+    chatWAAdmin: 'Chat WA Admin',
 
     // Booking Modal
     modalTitleForm: 'Form Booking Lapangan',
@@ -90,16 +99,52 @@ export const translations = {
     payTransferNote: '(Bayar di Tempat / Transfer)',
     bankInstructionsTitle: 'Petunjuk Pembayaran Transfer Bank:',
     btnCloseReturn: 'TUTUP & KEMBALI KE BERANDA',
+    multiBookingTipTitle: 'Tips Booking Lebih Dari 1 Lapangan:',
+    multiBookingTipDesc: 'Gunakan Nama Lengkap & No. WhatsApp yang sama persis. Selama tagihan sebelumnya masih UNPAID, booking baru akan otomatis digabungkan dalam 1 Kode Booking & 1 Tagihan!',
+    mergedBookingNotice: 'Booking baru ini telah otomatis digabungkan ke Kode Booking',
+    rentedCourtsList: 'Daftar Lapangan Disewa:',
+    qrisPaymentTitle: 'Pembayaran via QRIS',
+    qrisScanDesc: 'Scan QRIS menggunakan GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll.',
+    processing: 'Memproses...',
 
     // Check Booking Modal
     checkModalTitle: 'Cek Status Booking & Konfirmasi Bayar',
     checkInputPlaceholder: 'Contoh: SB-1001 atau 081234567890',
     btnCheck: 'CEK',
+    searching: 'Mencari...',
     uploadProofTitle: 'Upload Bukti Transfer Pembayaran',
     uploadProofSub: 'Unggah foto/struk transfer agar staff venue dapat memverifikasi pembayaran Anda.',
     btnUploadProof: 'UNGGAH BUKTI TRANSFER',
+    uploadingProofMsg: 'Mengunggah...',
+    proofReadyMsg: 'Bukti Transfer Ready',
+    proofReadySub: 'Klik tombol di bawah untuk unggah',
     orWhatsApp: 'ATAU BUKTI VIA WHATSAPP',
     btnSendWA: 'KIRIM BUKTI PEMBAYARAN KE WHATSAPP ADMIN',
+    bankPaymentDetails: 'Rekening Pembayaran Venue',
+    scanQris: 'Scan QRIS',
+
+    // Admin Login Modal
+    staffLoginTitle: 'Portal Login Staff & Operator Venue',
+    usernameLabel: 'Username Staff *',
+    passwordLabel: 'Password *',
+    usernamePlaceholder: 'Masukkan username',
+    passwordPlaceholder: 'Masukkan password',
+    btnEnterDashboard: 'MASUK DASHBOARD',
+    loggingIn: 'Memproses Login...',
+    demoAccountsTitle: 'Akun Akses Berdasarkan Level Role:',
+    returnToHome: 'Kembali ke Landing Page Utama',
+
+    // Manual Staff Booking Modal
+    manualBookingTitle: 'Booking Manual (Input Staff / On-site)',
+    manualBookingSuccessTitle: 'Booking Manual Berhasil Dibuat!',
+    manualBookingSuccessSub: 'Jadwal telah diperbarui di sistem dan kalender visual.',
+    selectCourtLabel: 'Pilih Lapangan *',
+    custDataManualTitle: 'Data Customer (Walk-in / Telepon)',
+    custNameLabel: 'Nama Customer *',
+    btnClose: 'TUTUP',
+    btnCancel: 'Batal',
+    btnSaveManualBooking: 'SIMPAN BOOKING MANUAL',
+    savingManualBooking: 'Menyimpan...',
 
     // Management Dashboard (Admin)
     adminTitle: 'Management Console',
@@ -130,7 +175,109 @@ export const translations = {
     btnDeletePermanent: 'Hapus Permanen',
     btnSetPaid: 'Set Paid',
     btnViewProof: 'Lihat Bukti',
-    btnCancel: 'Batal'
+
+    // Overview Tab
+    loadingDashboard: 'Memuat data dashboard...',
+    upcomingBookingsTitle: 'Upcoming Bookings',
+    upcomingBookingsSub: 'Daftar reservasi mendatang',
+    statBySport: 'Statistik Per Olahraga',
+    sessions: 'Sesi',
+    recordedInSystem: 'Tercatat di sistem',
+    courtsAvailable: 'Lapangan Tersedia',
+    noUpcomingBookings: 'Belum ada booking mendatang',
+
+    // Bookings & Payments Tab
+    searchBookingsPlaceholder: 'Cari kode booking, nama penyewa, atau hp...',
+    allBookingStatus: 'Semua Status Booking',
+    exportExcel: 'EXPORT EXCEL',
+    noBookingsFound: 'Tidak ada data booking ditemukan.',
+    showingData: 'Menampilkan',
+    to: 'sampai',
+    of: 'dari',
+    bookingsCount: 'data booking',
+    exportModalTitle: 'Export Data ke Excel',
+    exportDateStart: 'Tanggal Awal *',
+    exportDateEnd: 'Tanggal Akhir *',
+    downloadExcelBtn: 'DOWNLOAD FILE EXCEL',
+    transferProofModalTitle: 'Bukti Transfer Pembayaran',
+    verifySetPaidBtn: 'VERIFIKASI & SET PAID',
+    deleteProofBtn: 'Hapus Bukti',
+
+    // Calendar Tab
+    visualCalendarTitle: 'Visual Court Schedule Grid',
+    visualCalendarSub: 'Matriks ketersediaan jam per lapangan. Klik slot terisi untuk kelola status / hapus booking.',
+    hourHeader: 'Jam',
+    loadingCalendar: 'Memuat jadwal kalender...',
+    manageBookingStatusTitle: 'Kelola Status Booking Staff',
+    currentStatusLabel: 'Status Saat Ini:',
+    finishBtn: 'Selesai',
+
+    // Courts Tab
+    courtMgmtTitle: 'Pengelolaan Lapangan (Court Management)',
+    courtMgmtSub: 'Kelola daftar lapangan, harga per jam, foto, dan status aktif',
+    addNewCourtBtn: 'TAMBAH LAPANGAN BARU',
+    editCourtTitle: 'Edit Data Lapangan',
+    addNewCourtTitle: 'Tambah Lapangan Baru',
+    sportCategoryLabel: 'Cabang Olahraga *',
+    courtNameLabel: 'Nama Lapangan *',
+    pricePerHourLabel: 'Harga Per Jam (Rp) *',
+    imageUrlLabel: 'URL Foto Lapangan',
+    facilitiesCommaLabel: 'Fasilitas (Pisahkan dengan koma)',
+    courtStatusLabel: 'Status Lapangan',
+    activeStatus: 'Active (Siap Sewa)',
+    maintenanceStatus: 'Maintenance (Perbaikan)',
+    saveCourtBtn: 'Simpan Lapangan',
+    loadingCourts: 'Memuat daftar lapangan...',
+
+    // Sports Tab
+    addSportHeading: 'Tambah Cabang Olahraga',
+    sportNameLabel: 'Nama Olahraga *',
+    shortDescLabel: 'Deskripsi Singkat',
+    addSportBtn: '+ TAMBAH OLAHRAGA',
+    sportsListHeading: 'Kategori Olahraga Terdaftar',
+
+    // Customers Tab
+    customerDirTitle: 'Data Pelanggan (Customer Directory)',
+    customerDirSub: 'Riwayat penyewa, total booking, dan total pengeluaran',
+    searchCustomerPlaceholder: 'Cari nama, no hp, atau email...',
+    noCustomersFound: 'Tidak ada data customer ditemukan.',
+    loadingCustomers: 'Memuat data penyewa...',
+    totalBookingsLabel: 'Total Sesi Booking',
+    totalSpentLabel: 'Total Spent',
+
+    // Reports Tab
+    reportsHeading: 'Laporan Pendapatan & Occupancy Venue',
+    reportsSub: 'Ringkasan performa bisnis venue per lapangan & cabang olahraga',
+    revenuePerCourt: 'Laporan Revenue Per Lapangan',
+    occupancyMetrics: 'Metrik Occupancy Rate',
+    todayUsage: 'Tingkat Penggunaan Hari Ini',
+    totalActiveCourts: 'Total Lapangan Aktif:',
+    occupiedCourtsCount: 'Lapangan Terpakai:',
+    emptyCourtsCount: 'Lapangan Kosong:',
+
+    // Settings Tab
+    venuePaymentConfig: 'Venue Payment Configuration',
+    paymentSettingsHeading: 'Pengaturan Metode Pembayaran',
+    paymentSettingsSub: 'Atur informasi Nomor Rekening Bank dan Gambar QRIS venue untuk transaksi pembayaran customer.',
+    bankInfoHeading: 'Informasi Rekening Bank Venue',
+    bankInfoSub: 'Nomor rekening transfer yang akan ditampilkan pada tiket booking customer.',
+    bankNameField: 'Nama Bank *',
+    accountNumberField: 'Nomor Rekening *',
+    accountHolderField: 'Atas Nama (Pemilik) *',
+    waSupportHeading: 'Nomor WhatsApp Support / Chat Live',
+    waSupportSub: 'Nomor WhatsApp ini digunakan untuk tombol melayang (Floating Widget) di Beranda Utama & konfirmasi pembayaran.',
+    waAdminField: 'Nomor WhatsApp Admin (Kode Negara 62...) *',
+    qrisInfoHeading: 'Informasi & Barcode QRIS',
+    qrisInfoSub: 'Kelola gambar QRIS venue yang digunakan customer untuk pembayaran digital instant.',
+    merchantNameField: 'Nama Merchant / Keterangan QRIS',
+    activeQrisImage: 'Gambar QRIS Active',
+    changeQrisBtn: 'Ganti Gambar QRIS',
+    deleteQrisBtn: 'Hapus QRIS',
+    noQrisTitle: 'Belum Ada Gambar QRIS',
+    noQrisSub: 'Unggah file gambar kode QRIS venue Anda (format PNG, JPG, atau WebP).',
+    uploadNewQrisBtn: 'Upload Gambar QRIS Baru',
+    savePaymentSettingsBtn: 'SIMPAN PENGATURAN PEMBAYARAN',
+    savingSettingsMsg: 'Menyimpan...'
   },
   en: {
     // Brand & Slogan
@@ -179,6 +326,7 @@ export const translations = {
     perHour: '/ hour',
     btnBookSelectDate: 'SELECT DATE & BOOK',
     noCourtsMatch: 'No courts match the current filter.',
+    availabilityFor: 'Availability',
 
     // Availability UI & Legend
     availTag: 'Time Slot Grid',
@@ -188,6 +336,8 @@ export const translations = {
     availLegendSelected: '🔵 Selected',
     availLegendBooked: '⚪ Booked',
     tableCourtHeader: 'Court / Time',
+    statusAvailable: 'Available',
+    statusBooked: 'Booked',
 
     // Why Choose Us
     whyUsTag: 'SportBook Advantages',
@@ -201,6 +351,12 @@ export const translations = {
     feat3Desc: 'Professional LED lighting, anti-slip flooring, cool AC, clean lockers & showers.',
     feat4Title: 'Extended Operating Hours',
     feat4Desc: 'Open daily from 08:00 to 23:00 WIB to fit your favorite playing schedule.',
+
+    // Footer & WA
+    footerDesc: 'Find Your Court. Book Your Game. The most modern, fast, and hassle-free sports court reservation platform.',
+    footerCustomerService: 'Customer Service',
+    footerContactUs: 'Contact Us',
+    chatWAAdmin: 'Chat WA Admin',
 
     // Booking Modal
     modalTitleForm: 'Court Booking Form',
@@ -223,16 +379,52 @@ export const translations = {
     payTransferNote: '(Pay On-Site / Transfer)',
     bankInstructionsTitle: 'Bank Transfer Instructions:',
     btnCloseReturn: 'CLOSE & RETURN HOME',
+    multiBookingTipTitle: 'Tips for Booking Multiple Courts:',
+    multiBookingTipDesc: 'Use the exact same Full Name & WhatsApp Number. As long as your previous invoice is UNPAID, new bookings will be merged under 1 Booking Code & Invoice!',
+    mergedBookingNotice: 'This new booking has been automatically merged into your Booking Code',
+    rentedCourtsList: 'Rented Courts List:',
+    qrisPaymentTitle: 'Payment via QRIS',
+    qrisScanDesc: 'Scan QRIS using GoPay, OVO, Dana, ShopeePay, Mobile Banking, etc.',
+    processing: 'Processing...',
 
     // Check Booking Modal
     checkModalTitle: 'Check Booking Status & Payment',
     checkInputPlaceholder: 'Example: SB-1001 or 081234567890',
     btnCheck: 'CHECK',
+    searching: 'Searching...',
     uploadProofTitle: 'Upload Payment Receipt Proof',
     uploadProofSub: 'Upload transfer receipt photo for staff verification.',
     btnUploadProof: 'UPLOAD TRANSFER PROOF',
+    uploadingProofMsg: 'Uploading...',
+    proofReadyMsg: 'Transfer Proof Ready',
+    proofReadySub: 'Click button below to upload',
     orWhatsApp: 'OR PROOF VIA WHATSAPP',
     btnSendWA: 'SEND PAYMENT PROOF TO ADMIN WHATSAPP',
+    bankPaymentDetails: 'Venue Payment Bank Account',
+    scanQris: 'Scan QRIS',
+
+    // Admin Login Modal
+    staffLoginTitle: 'Staff & Venue Operator Login Portal',
+    usernameLabel: 'Staff Username *',
+    passwordLabel: 'Password *',
+    usernamePlaceholder: 'Enter username',
+    passwordPlaceholder: 'Enter password',
+    btnEnterDashboard: 'ENTER DASHBOARD',
+    loggingIn: 'Processing Login...',
+    demoAccountsTitle: 'Access Accounts by Role Level:',
+    returnToHome: 'Return to Main Landing Page',
+
+    // Manual Staff Booking Modal
+    manualBookingTitle: 'Manual Staff Booking (On-site / Phone)',
+    manualBookingSuccessTitle: 'Manual Booking Created Successfully!',
+    manualBookingSuccessSub: 'Schedule updated in system and visual calendar grid.',
+    selectCourtLabel: 'Select Court *',
+    custDataManualTitle: 'Customer Details (Walk-in / Phone)',
+    custNameLabel: 'Customer Name *',
+    btnClose: 'CLOSE',
+    btnCancel: 'Cancel',
+    btnSaveManualBooking: 'SAVE MANUAL BOOKING',
+    savingManualBooking: 'Saving...',
 
     // Management Dashboard (Admin)
     adminTitle: 'Management Console',
@@ -263,6 +455,108 @@ export const translations = {
     btnDeletePermanent: 'Delete Permanent',
     btnSetPaid: 'Set Paid',
     btnViewProof: 'View Proof',
-    btnCancel: 'Cancel'
+
+    // Overview Tab
+    loadingDashboard: 'Loading dashboard data...',
+    upcomingBookingsTitle: 'Upcoming Bookings',
+    upcomingBookingsSub: 'List of upcoming reservations',
+    statBySport: 'Statistics by Sport',
+    sessions: 'Sessions',
+    recordedInSystem: 'Recorded in system',
+    courtsAvailable: 'Courts Available',
+    noUpcomingBookings: 'No upcoming bookings yet',
+
+    // Bookings & Payments Tab
+    searchBookingsPlaceholder: 'Search booking code, customer name, or phone...',
+    allBookingStatus: 'All Booking Statuses',
+    exportExcel: 'EXPORT EXCEL',
+    noBookingsFound: 'No booking records found.',
+    showingData: 'Showing',
+    to: 'to',
+    of: 'of',
+    bookingsCount: 'booking records',
+    exportModalTitle: 'Export Data to Excel',
+    exportDateStart: 'Start Date *',
+    exportDateEnd: 'End Date *',
+    downloadExcelBtn: 'DOWNLOAD EXCEL FILE',
+    transferProofModalTitle: 'Payment Transfer Proof',
+    verifySetPaidBtn: 'VERIFY & SET PAID',
+    deleteProofBtn: 'Delete Proof',
+
+    // Calendar Tab
+    visualCalendarTitle: 'Visual Court Schedule Grid',
+    visualCalendarSub: 'Court time slot matrix. Click occupied slot to manage status or delete.',
+    hourHeader: 'Time',
+    loadingCalendar: 'Loading calendar schedule...',
+    manageBookingStatusTitle: 'Manage Staff Booking Status',
+    currentStatusLabel: 'Current Status:',
+    finishBtn: 'Done',
+
+    // Courts Tab
+    courtMgmtTitle: 'Court Directory Management',
+    courtMgmtSub: 'Manage courts, hourly rates, photos, and active availability',
+    addNewCourtBtn: 'ADD NEW COURT',
+    editCourtTitle: 'Edit Court Details',
+    addNewCourtTitle: 'Add New Court',
+    sportCategoryLabel: 'Sport Category *',
+    courtNameLabel: 'Court Name *',
+    pricePerHourLabel: 'Hourly Rate (IDR) *',
+    imageUrlLabel: 'Court Image URL',
+    facilitiesCommaLabel: 'Facilities (Comma separated)',
+    courtStatusLabel: 'Court Status',
+    activeStatus: 'Active (Available)',
+    maintenanceStatus: 'Maintenance (Under Repair)',
+    saveCourtBtn: 'Save Court',
+    loadingCourts: 'Loading courts list...',
+
+    // Sports Tab
+    addSportHeading: 'Add Sport Category',
+    sportNameLabel: 'Sport Name *',
+    shortDescLabel: 'Short Description',
+    addSportBtn: '+ ADD SPORT',
+    sportsListHeading: 'Registered Sport Categories',
+
+    // Customers Tab
+    customerDirTitle: 'Customer Directory',
+    customerDirSub: 'Customer rental history, total bookings, and total spent',
+    searchCustomerPlaceholder: 'Search name, phone, or email...',
+    noCustomersFound: 'No customer records found.',
+    loadingCustomers: 'Loading customer data...',
+    totalBookingsLabel: 'Total Booking Sessions',
+    totalSpentLabel: 'Total Spent',
+
+    // Reports Tab
+    reportsHeading: 'Revenue & Occupancy Reports',
+    reportsSub: 'Business performance summary by court and sport branch',
+    revenuePerCourt: 'Revenue Report by Court',
+    occupancyMetrics: 'Occupancy Rate Metrics',
+    todayUsage: 'Today Usage Rate',
+    totalActiveCourts: 'Total Active Courts:',
+    occupiedCourtsCount: 'Occupied Courts:',
+    emptyCourtsCount: 'Available Courts:',
+
+    // Settings Tab
+    venuePaymentConfig: 'Venue Payment Configuration',
+    paymentSettingsHeading: 'Payment Methods Settings',
+    paymentSettingsSub: 'Configure venue bank account details & QRIS image for customer payments.',
+    bankInfoHeading: 'Venue Bank Account Information',
+    bankInfoSub: 'Bank transfer details displayed on customer booking receipts.',
+    bankNameField: 'Bank Name *',
+    accountNumberField: 'Account Number *',
+    accountHolderField: 'Account Holder Name *',
+    waSupportHeading: 'WhatsApp Support / Live Chat Number',
+    waSupportSub: 'This WhatsApp number is used for the floating widget on homepage & payment verification.',
+    waAdminField: 'Admin WhatsApp Number (Country code 62...) *',
+    qrisInfoHeading: 'QRIS Information & Barcode',
+    qrisInfoSub: 'Manage venue QRIS barcode image for instant digital payments.',
+    merchantNameField: 'Merchant Name / QRIS Description',
+    activeQrisImage: 'Active QRIS Barcode',
+    changeQrisBtn: 'Change QRIS Image',
+    deleteQrisBtn: 'Delete QRIS',
+    noQrisTitle: 'No QRIS Image Uploaded',
+    noQrisSub: 'Upload your venue QRIS barcode image (PNG, JPG, or WebP format).',
+    uploadNewQrisBtn: 'Upload New QRIS Image',
+    savePaymentSettingsBtn: 'SAVE PAYMENT SETTINGS',
+    savingSettingsMsg: 'Saving...'
   }
 };

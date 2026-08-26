@@ -52,7 +52,7 @@ export default function CourtCard({ court, slots, selectedDate, onSelectSlot, on
           <div className="mt-4 pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between text-xs font-bold text-slate-600 mb-2">
               <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-primary" /> Availability ({selectedDate}):
+                <Clock className="w-3.5 h-3.5 text-primary" /> {t('availabilityFor')} ({selectedDate}):
               </span>
               <span className="text-[11px] text-sportgreen font-bold">{t('availLegendAvailable')}</span>
             </div>

@@ -34,7 +34,7 @@ async function runMigrationAndSeed() {
         price_per_hour INT NOT NULL,
         image_url TEXT NOT NULL,
         facilities JSONB NOT NULL,
-        status VARCHAR(20) CHECK(status IN ('active', 'inactive')) DEFAULT 'active'
+        status VARCHAR(20) DEFAULT 'active'
       );
 
       CREATE TABLE IF NOT EXISTS customers (
@@ -47,7 +47,7 @@ async function runMigrationAndSeed() {
 
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
-        booking_code VARCHAR(50) UNIQUE NOT NULL,
+        booking_code VARCHAR(50) NOT NULL,
         court_id INT NOT NULL REFERENCES courts(id) ON DELETE CASCADE,
         customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
         booking_date VARCHAR(20) NOT NULL,
@@ -78,6 +78,7 @@ async function runMigrationAndSeed() {
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_status_check;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_code_key;
+      ALTER TABLE courts DROP CONSTRAINT IF EXISTS courts_status_check;
     `);
 
     console.log('[PostgreSQL] Migration completed successfully.');
@@ -139,8 +140,8 @@ async function runMigrationAndSeed() {
       const cust3 = await client.query('INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING id', ['Rian Pratama', '085711223344', 'rian@outlook.com']);
 
       const todayStr = new Date().toISOString().split('T')[0];
-
       const ymSeed = todayStr.replace(/-/g, '').substring(0, 6);
+
       await client.query(`
         INSERT INTO bookings (booking_code, court_id, customer_id, booking_date, start_time, end_time, duration_hours, total_price, payment_status, booking_status)
         VALUES 

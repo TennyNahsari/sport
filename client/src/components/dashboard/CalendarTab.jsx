@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Filter, CheckCircle2, User, XCircle, Trash2 } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function CalendarTab() {
+  const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [calendarData, setCalendarData] = useState(null);
@@ -72,13 +74,13 @@ export default function CalendarTab() {
       {/* Calendar Bar */}
       <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="font-extrabold text-navy text-lg">Visual Court Schedule Grid</h3>
-          <p className="text-xs text-slate-500">Matriks ketersediaan jam per lapangan. Klik slot terisi untuk kelola status / hapus booking.</p>
+          <h3 className="font-extrabold text-navy text-lg">{t('visualCalendarTitle')}</h3>
+          <p className="text-xs text-slate-500">{t('visualCalendarSub')}</p>
         </div>
 
         <div className="flex items-center space-x-3">
           <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-            <CalendarIcon className="w-4 h-4 text-primary" /> Tanggal:
+            <CalendarIcon className="w-4 h-4 text-primary" /> {t('labelDate')}:
           </span>
           <input
             type="date"
@@ -92,13 +94,13 @@ export default function CalendarTab() {
       {/* Grid Table */}
       <div className="bg-white rounded-card border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-slate-500 font-bold">Memuat jadwal kalender...</div>
+          <div className="p-8 text-center text-slate-500 font-bold">{t('loadingCalendar')}</div>
         ) : !calendarData ? null : (
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-navy text-white font-bold">
-                  <th className="p-3 sticky left-0 bg-navy z-10 w-24">Jam</th>
+                  <th className="p-3 sticky left-0 bg-navy z-10 w-24">{t('hourHeader')}</th>
                   {calendarData.courts.map((court) => (
                     <th key={court.id} className="p-3 border-l border-slate-800 text-center min-w-[140px]">
                       <div>{court.name}</div>
@@ -137,7 +139,7 @@ export default function CalendarTab() {
                             </button>
                           ) : (
                             <div className="bg-sportgreen-light text-sportgreen p-2 rounded border border-sportgreen/20 font-bold text-[11px]">
-                              Available
+                              {t('statusAvailable')}
                             </div>
                           )}
                         </td>
@@ -157,7 +159,7 @@ export default function CalendarTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
           <div className="bg-white rounded-card shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-extrabold text-navy text-base">Kelola Status Booking Staff</h3>
+              <h3 className="font-extrabold text-navy text-base">{t('manageBookingStatusTitle')}</h3>
               <button onClick={() => setSelectedBooking(null)} className="text-slate-400 hover:text-navy">
                 <XCircle className="w-5 h-5" />
               </button>
@@ -165,19 +167,19 @@ export default function CalendarTab() {
 
             <div className="space-y-2 text-xs text-navy">
               <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Kode Booking:</span>
+                <span className="text-slate-500 font-semibold">{t('tableBookingCode')}:</span>
                 <span className="font-mono font-bold text-primary">{selectedBooking.booking_code}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Penyewa:</span>
+                <span className="text-slate-500 font-semibold">{t('tableCustomer')}:</span>
                 <span className="font-bold">{selectedBooking.customer_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Lapangan:</span>
+                <span className="text-slate-500 font-semibold">{t('tableCourtSport')}:</span>
                 <span className="font-bold">{selectedBooking.court_name}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-semibold">Status Saat Ini:</span>
+                <span className="text-slate-500 font-semibold">{t('currentStatusLabel')}</span>
                 <select
                   value={(selectedBooking.booking_status || 'paid').toLowerCase()}
                   onChange={(e) => handleUpdateBookingStatus(selectedBooking.id, e.target.value)}
@@ -197,14 +199,14 @@ export default function CalendarTab() {
                 onClick={() => handleHardDeleteBooking(selectedBooking.id, selectedBooking.booking_code)}
                 className="px-3 py-1.5 bg-red-50 hover:bg-red-600 hover:text-white text-red-600 font-bold rounded-button text-xs transition-colors flex items-center gap-1"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Hapus Permanen
+                <Trash2 className="w-3.5 h-3.5" /> {t('btnDeletePermanent')}
               </button>
 
               <button
                 onClick={() => setSelectedBooking(null)}
                 className="px-4 py-2 bg-navy text-white font-bold rounded-button text-xs"
               >
-                Selesai
+                {t('finishBtn')}
               </button>
             </div>
           </div>

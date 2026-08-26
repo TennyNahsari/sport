@@ -90,7 +90,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-navy/80 backdrop-blur-sm">
       
-      {/* Fixed Container with Max Height & Flex Column */}
+      {/* Fixed Container with Max Height & Flex Column for Mobile Responsiveness */}
       <div className="bg-white rounded-card shadow-2xl max-w-xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         
         {/* Fixed Header */}
@@ -188,10 +188,10 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                 <div className="bg-amber-50 border border-amber-200 rounded-button p-3 text-xs text-amber-900 space-y-1">
                   <div className="flex items-center space-x-1.5 font-bold text-amber-800">
                     <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Tips Booking Lebih Dari 1 Lapangan:</span>
+                    <span>{t('multiBookingTipTitle')}</span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Gunakan <strong>Nama Lengkap</strong> & <strong>No. WhatsApp</strong> yang <strong className="text-amber-900">sama persis</strong> (misal: <em>"Tenny"</em>). Selama tagihan sebelumnya masih <span className="px-1 py-0.2 rounded bg-amber-200 text-amber-900 font-bold uppercase text-[10px]">UNPAID</span>, booking baru akan otomatis digabungkan dalam <strong>1 Kode Booking & 1 Tagihan</strong>!
+                    {t('multiBookingTipDesc')}
                   </p>
                 </div>
 
@@ -214,7 +214,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('phone')} (Angka saja)</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('phone')}</label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                       <input
@@ -258,7 +258,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                   className="w-full sm:w-auto px-6 py-3 bg-primary hover:bg-primary-hover text-white font-extrabold text-xs sm:text-sm rounded-button shadow-lg shadow-primary/30 flex items-center justify-center space-x-2 disabled:opacity-50 transition-all"
                 >
                   {loading ? (
-                    <span>Processing...</span>
+                    <span>{t('processing')}</span>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
@@ -288,7 +288,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
               {confirmedBooking.is_merged && (
                 <div className="bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-button text-xs font-bold text-left flex items-center space-x-2">
                   <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
-                  <span>Booking baru ini telah otomatis digabungkan ke Kode Booking <strong>{confirmedBooking.booking_code}</strong> Anda!</span>
+                  <span>{t('mergedBookingNotice')} <strong>{confirmedBooking.booking_code}</strong>!</span>
                 </div>
               )}
 
@@ -301,7 +301,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
 
                 {/* Items List */}
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Daftar Lapangan Disewa:</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">{t('rentedCourtsList')}</span>
                   {(confirmedBooking.items && confirmedBooking.items.length > 0 ? confirmedBooking.items : [confirmedBooking]).map((item, idx) => (
                     <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 flex justify-between items-center text-xs">
                       <div>
@@ -358,7 +358,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                   <div className="pt-2 border-t border-slate-800 space-y-2">
                     <div className="flex items-center space-x-2 font-bold text-sm text-sportgreen">
                       <QrCode className="w-4 h-4" />
-                      <span>Pembayaran via QRIS</span>
+                      <span>{t('qrisPaymentTitle')}</span>
                     </div>
                     <div className="bg-slate-800 p-3 rounded-button text-center space-y-2">
                       <img
@@ -367,7 +367,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                         className="w-44 h-44 mx-auto object-contain bg-white p-2 rounded border border-slate-700 shadow-md"
                       />
                       <p className="text-[11px] font-bold text-white">{venueSettings.qris_merchant_name || 'SportBook Venue QRIS'}</p>
-                      <p className="text-[10px] text-slate-400">Scan QRIS menggunakan GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll.</p>
+                      <p className="text-[10px] text-slate-400">{t('qrisScanDesc')}</p>
                     </div>
                   </div>
                 )}
