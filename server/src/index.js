@@ -10,6 +10,7 @@ const courtsRoutes = require('./routes/courts');
 const bookingsRoutes = require('./routes/bookings');
 const reportsRoutes = require('./routes/reports');
 const authRoutes = require('./routes/auth');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,12 +19,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // API Routes
 app.use('/api/sports', sportsRoutes);
 app.use('/api/courts', courtsRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

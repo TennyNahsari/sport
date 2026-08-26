@@ -12,6 +12,7 @@ import CourtsTab from './CourtsTab';
 import SportsTab from './SportsTab';
 import CustomersTab from './CustomersTab';
 import ReportsTab from './ReportsTab';
+import SettingsTab from './SettingsTab';
 import ManualBookingModal from './ManualBookingModal';
 import AdminLoginModal from './AdminLoginModal';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -312,11 +313,7 @@ export default function AdminLayout({ onSwitchToCustomer }) {
 
           {activeTab === 'settings' && (
             isAdmin ? (
-              <div className="bg-white p-8 rounded-card border border-slate-200 text-center space-y-2">
-                <Settings className="w-12 h-12 text-primary mx-auto" />
-                <h3 className="text-xl font-extrabold text-navy">Pengaturan Sistem Venue</h3>
-                <p className="text-xs text-slate-500">Jam Operasional: 08:00 - 23:00 WIB · Bank Transfer BCA Active · WhatsApp Gateway Connected</p>
-              </div>
+              <SettingsTab />
             ) : (
               <div className="bg-white p-8 rounded-card border border-amber-200 text-center space-y-3">
                 <Lock className="w-12 h-12 text-amber-500 mx-auto" />

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink, QrCode, Copy } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function CheckBookingModal({ onClose }) {
@@ -8,6 +8,25 @@ export default function CheckBookingModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const [venueSettings, setVenueSettings] = useState({
+    bank_name: 'BCA',
+    bank_account_number: '8830-1920-3341',
+    bank_account_holder: 'SportBook Venue Management',
+    qris_merchant_name: 'SportBook Venue QRIS',
+    qris_image_url: ''
+  });
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setVenueSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load settings:', err));
+  }, []);
 
   // Proof Upload State
   const [proofInput, setProofInput] = useState('');
@@ -180,23 +199,30 @@ export default function CheckBookingModal({ onClose }) {
               </div>
 
               {/* Details Ticket Summary */}
-              <div className="space-y-2 text-xs text-navy border border-slate-100 p-3.5 rounded-button bg-white">
-                <div className="flex justify-between border-b pb-1.5">
-                  <span className="text-slate-500">{t('tableCourtSport')}:</span>
-                  <span className="font-extrabold">{bookingData.court_name} ({bookingData.sport_name})</span>
+              <div className="space-y-2.5 text-xs text-navy border border-slate-200 p-3.5 rounded-button bg-white">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-semibold">{t('tableCustomer')}:</span>
+                  <span className="font-extrabold text-navy text-sm">{bookingData.customer_name} ({bookingData.customer_phone})</span>
                 </div>
-                <div className="flex justify-between border-b pb-1.5">
-                  <span className="text-slate-500">{t('tableDateTime')}:</span>
-                  <span className="font-extrabold">{bookingData.booking_date} ({bookingData.start_time} - {bookingData.end_time})</span>
+
+                {/* Items List */}
+                <div className="space-y-1.5 pt-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Item Lapangan Disewa:</span>
+                  {(bookingData.items && bookingData.items.length > 0 ? bookingData.items : [bookingData]).map((item, idx) => (
+                    <div key={idx} className="bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center text-xs">
+                      <div>
+                        <p className="font-extrabold text-navy">{item.court_name} <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span></p>
+                        <p className="text-[11px] text-slate-500">{item.booking_date} ({item.start_time} - {item.end_time})</p>
+                      </div>
+                      <span className="font-extrabold text-primary">Rp {(parseInt(item.total_price) || 0).toLocaleString('id-ID')}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between border-b pb-1.5">
-                  <span className="text-slate-500">{t('tableCustomer')}:</span>
-                  <span className="font-bold">{bookingData.customer_name} ({bookingData.customer_phone})</span>
-                </div>
-                <div className="flex justify-between pt-1">
-                  <span className="text-slate-500 font-bold">{t('tableTotalPrice')}:</span>
-                  <span className="font-extrabold text-primary text-sm">
-                    Rp {bookingData.total_price?.toLocaleString('id-ID')}
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                  <span className="text-slate-600 font-bold">{t('tableTotalPrice')}:</span>
+                  <span className="font-extrabold text-primary text-base">
+                    Rp {(parseInt(bookingData.total_price) || 0).toLocaleString('id-ID')}
                   </span>
                 </div>
               </div>
@@ -205,6 +231,47 @@ export default function CheckBookingModal({ onClose }) {
               {bookingData.payment_status !== 'paid' && bookingData.payment_status !== 'Paid' && (
                 <div className="space-y-3 pt-2 border-t">
                   
+                  {/* Bank & QRIS Payment Info */}
+                  <div className="bg-slate-900 text-white p-3.5 rounded-card text-xs space-y-3">
+                    <div className="flex items-center space-x-2 font-bold text-xs text-primary-light">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                      <span>Rekening Pembayaran Venue</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between bg-slate-800 p-2 rounded-button">
+                      <div>
+                        <p className="text-[10px] text-slate-400">{venueSettings.bank_name || 'BCA'} Rekening</p>
+                        <p className="font-mono font-bold text-white text-xs">{venueSettings.bank_account_number || '8830-1920-3341'}</p>
+                        <p className="text-[9px] text-slate-400">a.n. {venueSettings.bank_account_holder || 'SportBook Venue Management'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText((venueSettings.bank_account_number || '').replace(/[^0-9]/g, ''))}
+                        className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                        title="Copy Account Number"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {venueSettings.qris_image_url && (
+                      <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                        <div className="flex items-center space-x-1.5 font-bold text-xs text-sportgreen">
+                          <QrCode className="w-4 h-4" />
+                          <span>Scan QRIS</span>
+                        </div>
+                        <div className="bg-slate-800 p-2.5 rounded-button text-center space-y-1">
+                          <img
+                            src={venueSettings.qris_image_url}
+                            alt="QRIS Barcode"
+                            className="w-36 h-36 mx-auto object-contain bg-white p-1.5 rounded border border-slate-700"
+                          />
+                          <p className="text-[10px] font-bold text-white">{venueSettings.qris_merchant_name || 'SportBook Venue QRIS'}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-blue-50 p-3 rounded-button border border-blue-100">
                     <h4 className="font-extrabold text-navy text-xs mb-0.5">{t('uploadProofTitle')}</h4>
                     <p className="text-[11px] text-slate-500 leading-tight">{t('uploadProofSub')}</p>

@@ -69,9 +69,15 @@ async function runMigrationAndSeed() {
         role VARCHAR(50) DEFAULT 'staff'
       );
 
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT
+      );
+
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_proof TEXT;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_status_check;
+      ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_code_key;
     `);
 
     console.log('[PostgreSQL] Migration completed successfully.');
@@ -150,6 +156,23 @@ async function runMigrationAndSeed() {
       console.log('[PostgreSQL] Seeding staff users (admin & operator)...');
       await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['admin', 'admin123', 'Super Admin', 'admin']);
       await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['operator', 'op123', 'Venue Operator', 'operator']);
+    }
+
+    // Seed default settings if empty
+    const settingsRes = await client.query('SELECT COUNT(*) FROM settings');
+    if (parseInt(settingsRes.rows[0].count) === 0) {
+      console.log('[PostgreSQL] Seeding default venue settings (bank & QRIS)...');
+      const defaultSettings = [
+        ['bank_name', 'BCA'],
+        ['bank_account_number', '8830-1920-3341'],
+        ['bank_account_holder', 'SportBook Venue Management'],
+        ['qris_merchant_name', 'SportBook Venue QRIS'],
+        ['qris_image_url', ''],
+        ['whatsapp_number', '6281234567890']
+      ];
+      for (const [key, value] of defaultSettings) {
+        await client.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING', [key, value]);
+      }
     }
 
     await client.query('COMMIT');

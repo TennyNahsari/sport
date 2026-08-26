@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { LanguageProvider } from './i18n/LanguageContext';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
+import WhatsAppFloatingButton from './components/common/WhatsAppFloatingButton';
 import HeroSection from './components/landing/HeroSection';
 import SportCategories from './components/landing/SportCategories';
 import PopularCourts from './components/landing/PopularCourts';
@@ -174,6 +175,8 @@ function MainContent() {
       <WhyChooseUs />
 
       <Footer />
+
+      <WhatsAppFloatingButton />
 
       {showBookingModal && (
         <BookingModal

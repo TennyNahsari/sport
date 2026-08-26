@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { X, Calendar, Clock, User, Phone, Mail, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Copy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, Clock, User, Phone, Mail, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Copy, QrCode } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function BookingModal({ court, sports, initialSlot, initialDate, onClose, onBookingSuccess }) {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
+
+  const [venueSettings, setVenueSettings] = useState({
+    bank_name: 'BCA',
+    bank_account_number: '8830-1920-3341',
+    bank_account_holder: 'SportBook Venue Management',
+    qris_merchant_name: 'SportBook Venue QRIS',
+    qris_image_url: ''
+  });
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setVenueSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load settings:', err));
+  }, []);
 
   const [selectedSportId, setSelectedSportId] = useState(court ? court.sport_id : '');
   const [selectedCourtId, setSelectedCourtId] = useState(court ? court.id : '');
@@ -162,8 +181,20 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                 </div>
               </div>
 
-              {/* Customer Data Inputs */}
+              {/* Customer Data Inputs & Multi-Booking Tip */}
               <div className="pt-2 border-t border-slate-100 space-y-3">
+                
+                {/* Multi-Court Booking Info Banner */}
+                <div className="bg-amber-50 border border-amber-200 rounded-button p-3 text-xs text-amber-900 space-y-1">
+                  <div className="flex items-center space-x-1.5 font-bold text-amber-800">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Tips Booking Lebih Dari 1 Lapangan:</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Gunakan <strong>Nama Lengkap</strong> & <strong>No. WhatsApp</strong> yang <strong className="text-amber-900">sama persis</strong> (misal: <em>"Tenny"</em>). Selama tagihan sebelumnya masih <span className="px-1 py-0.2 rounded bg-amber-200 text-amber-900 font-bold uppercase text-[10px]">UNPAID</span>, booking baru akan otomatis digabungkan dalam <strong>1 Kode Booking & 1 Tagihan</strong>!
+                  </p>
+                </div>
+
                 <span className="text-xs font-extrabold text-navy block">{t('custDataTitle')}</span>
 
                 <div>
@@ -173,7 +204,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                     <input
                       type="text"
                       required
-                      placeholder="Budi Santoso"
+                      placeholder="Tenny"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-button focus:ring-2 focus:ring-primary focus:outline-none font-medium"
@@ -183,16 +214,18 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('phone')}</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('phone')} (Angka saja)</label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                       <input
                         type="tel"
                         required
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="081234567890"
                         value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-button focus:ring-2 focus:ring-primary focus:outline-none font-medium"
+                        onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                        className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-button focus:ring-2 focus:ring-primary focus:outline-none font-medium font-mono"
                       />
                     </div>
                   </div>
@@ -252,23 +285,42 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                 <p className="text-xs text-slate-500 mt-1">{t('saveCodeNotice')}</p>
               </div>
 
-              {/* Details Ticket Card */}
-              <div className="bg-slate-50 p-4 rounded-card border border-slate-200 text-left text-xs space-y-2">
-                <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                  <span className="text-slate-500 font-semibold">{t('tableCourtSport')}:</span>
-                  <span className="font-extrabold text-navy">{confirmedBooking.court_name}</span>
+              {confirmedBooking.is_merged && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-button text-xs font-bold text-left flex items-center space-x-2">
+                  <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+                  <span>Booking baru ini telah otomatis digabungkan ke Kode Booking <strong>{confirmedBooking.booking_code}</strong> Anda!</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500 font-semibold">{t('tableDateTime')}:</span>
-                  <span className="font-extrabold text-navy">
-                    {confirmedBooking.booking_date} ({confirmedBooking.start_time} - {confirmedBooking.end_time})
+              )}
+
+              {/* Details Ticket Card */}
+              <div className="bg-slate-50 p-4 rounded-card border border-slate-200 text-left text-xs space-y-2.5">
+                <div className="border-b border-slate-200 pb-2 flex justify-between items-center">
+                  <span className="text-slate-500 font-semibold">{t('tableCustomer')}:</span>
+                  <span className="font-extrabold text-navy text-sm">{confirmedBooking.customer_name} ({confirmedBooking.customer_phone})</span>
+                </div>
+
+                {/* Items List */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Daftar Lapangan Disewa:</span>
+                  {(confirmedBooking.items && confirmedBooking.items.length > 0 ? confirmedBooking.items : [confirmedBooking]).map((item, idx) => (
+                    <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 flex justify-between items-center text-xs">
+                      <div>
+                        <p className="font-extrabold text-navy">{item.court_name} <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span></p>
+                        <p className="text-[11px] text-slate-500">{item.booking_date} ({item.start_time} - {item.end_time})</p>
+                      </div>
+                      <span className="font-extrabold text-primary">Rp {(parseInt(item.total_price) || 0).toLocaleString('id-ID')}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                  <span className="text-slate-600 font-bold text-xs">{t('totalPriceLabel')}</span>
+                  <span className="text-base font-extrabold text-primary">
+                    Rp {(parseInt(confirmedBooking.total_price) || 0).toLocaleString('id-ID')}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500 font-semibold">{t('tableCustomer')}:</span>
-                  <span className="font-extrabold text-navy">{confirmedBooking.customer_name} ({confirmedBooking.customer_phone})</span>
-                </div>
-                <div className="flex justify-between pt-1">
+
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200">
                   <span className="text-slate-500 font-semibold">{t('paymentStatusLabel')}</span>
                   <span className="px-2 py-0.5 rounded bg-orange-light text-orange font-bold text-[11px] uppercase">
                     {confirmedBooking.payment_status} {t('payTransferNote')}
@@ -276,26 +328,50 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                 </div>
               </div>
 
-              {/* Bank Transfer Instructions */}
-              <div className="bg-slate-900 text-white p-4 rounded-card text-left space-y-2.5 text-xs">
-                <div className="flex items-center space-x-2 font-bold text-sm text-primary-light">
-                  <CreditCard className="w-4 h-4 text-primary" />
-                  <span>{t('bankInstructionsTitle')}</span>
-                </div>
-                <div className="flex items-center justify-between bg-slate-800 p-2.5 rounded-button">
-                  <div>
-                    <p className="text-[11px] text-slate-400">BCA Virtual Account / Rekening</p>
-                    <p className="font-mono font-bold text-white text-sm">8830-1920-3341</p>
-                    <p className="text-[10px] text-slate-400">a.n. SportBook Venue Management</p>
+              {/* Dynamic Payment Details (Bank Transfer & QRIS) */}
+              <div className="bg-slate-900 text-white p-4 rounded-card text-left space-y-3 text-xs">
+                
+                {/* Bank Account */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 font-bold text-sm text-primary-light">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    <span>{t('bankInstructionsTitle')}</span>
                   </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText('883019203341')}
-                    className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
-                    title="Copy Account Number"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-between bg-slate-800 p-2.5 rounded-button">
+                    <div>
+                      <p className="text-[11px] text-slate-400">{venueSettings.bank_name || 'Bank'} Rekening</p>
+                      <p className="font-mono font-bold text-white text-sm">{venueSettings.bank_account_number || '8830-1920-3341'}</p>
+                      <p className="text-[10px] text-slate-400">a.n. {venueSettings.bank_account_holder || 'SportBook Venue Management'}</p>
+                    </div>
+                    <button
+                      onClick={() => navigator.clipboard.writeText((venueSettings.bank_account_number || '').replace(/[^0-9]/g, ''))}
+                      className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                      title="Copy Account Number"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+
+                {/* QRIS Code (If available) */}
+                {venueSettings.qris_image_url && (
+                  <div className="pt-2 border-t border-slate-800 space-y-2">
+                    <div className="flex items-center space-x-2 font-bold text-sm text-sportgreen">
+                      <QrCode className="w-4 h-4" />
+                      <span>Pembayaran via QRIS</span>
+                    </div>
+                    <div className="bg-slate-800 p-3 rounded-button text-center space-y-2">
+                      <img
+                        src={venueSettings.qris_image_url}
+                        alt="QRIS Barcode"
+                        className="w-44 h-44 mx-auto object-contain bg-white p-2 rounded border border-slate-700 shadow-md"
+                      />
+                      <p className="text-[11px] font-bold text-white">{venueSettings.qris_merchant_name || 'SportBook Venue QRIS'}</p>
+                      <p className="text-[10px] text-slate-400">Scan QRIS menggunakan GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll.</p>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               <button

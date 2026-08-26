@@ -112,15 +112,40 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   };
 
   const handleExecuteExportExcel = () => {
-    const filteredForExport = bookings.filter(b => {
+    const rawFiltered = bookings.filter(b => {
       if (!b.booking_date) return true;
       return b.booking_date >= exportStartDate && b.booking_date <= exportEndDate;
     });
 
-    if (filteredForExport.length === 0) {
+    if (rawFiltered.length === 0) {
       alert(`Tidak ada data ${filterPaymentOnly ? 'pembayaran' : 'booking'} pada rentang tanggal ${exportStartDate} s/d ${exportEndDate}`);
       return;
     }
+
+    const exportRows = [];
+    rawFiltered.forEach(b => {
+      if (b.items && b.items.length > 0) {
+        b.items.forEach(item => {
+          exportRows.push({
+            booking_code: b.booking_code,
+            customer_name: b.customer_name,
+            customer_phone: b.customer_phone,
+            customer_email: b.customer_email || '',
+            court_name: item.court_name,
+            sport_name: item.sport_name || '',
+            booking_date: item.booking_date,
+            start_time: item.start_time,
+            end_time: item.end_time,
+            duration_hours: item.duration_hours,
+            total_price: item.total_price,
+            payment_status: b.payment_status,
+            booking_status: b.booking_status
+          });
+        });
+      } else {
+        exportRows.push(b);
+      }
+    });
 
     const headers = {
       booking_code: 'Kode Booking',
@@ -133,13 +158,13 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
       start_time: 'Jam Mulai',
       end_time: 'Jam Selesai',
       duration_hours: 'Durasi (Jam)',
-      total_price: 'Total Biaya (Rp)',
+      total_price: 'Biaya Item (Rp)',
       payment_status: 'Payment Status',
       booking_status: 'Booking Status'
     };
 
     const fileName = filterPaymentOnly ? `Report_Payments_${exportStartDate}_to_${exportEndDate}` : `Report_Bookings_${exportStartDate}_to_${exportEndDate}`;
-    exportToCsv(fileName, filteredForExport, headers);
+    exportToCsv(fileName, exportRows, headers);
     setShowExportModal(false);
   };
 
@@ -267,13 +292,45 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                         </td>
 
                         <td className="p-4">
-                          <div className="font-extrabold">{b.court_name}</div>
-                          <div className="text-[10px] text-slate-400 uppercase">{b.sport_name}</div>
+                          {b.items && b.items.length > 1 ? (
+                            <div className="space-y-2">
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-blue-100 text-primary text-[10px] font-extrabold uppercase">
+                                {b.items.length} Lapangan Disewa
+                              </span>
+                              {b.items.map((item, idx) => (
+                                <div key={idx} className="border-b border-slate-100 pb-1.5 last:border-b-0">
+                                  <div className="font-extrabold text-navy">{item.court_name}</div>
+                                  <div className="text-[10px] text-slate-400 uppercase">{item.sport_name || 'Sport'}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="font-extrabold">{b.court_name}</div>
+                              <div className="text-[10px] text-slate-400 uppercase">{b.sport_name}</div>
+                            </>
+                          )}
                         </td>
 
                         <td className="p-4">
-                          <div className="font-bold">{b.booking_date}</div>
-                          <div className="text-[11px] font-bold text-primary">{b.start_time} - {b.end_time} ({b.duration_hours} Jam)</div>
+                          {b.items && b.items.length > 1 ? (
+                            <div className="space-y-2">
+                              <span className="inline-block text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                Rincian Jam per Lapangan
+                              </span>
+                              {b.items.map((item, idx) => (
+                                <div key={idx} className="border-b border-slate-100 pb-1.5 last:border-b-0">
+                                  <div className="font-bold text-slate-700">{item.booking_date}</div>
+                                  <div className="text-[11px] font-bold text-primary">{item.start_time} - {item.end_time} ({item.duration_hours} Jam)</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="font-bold">{b.booking_date}</div>
+                              <div className="text-[11px] font-bold text-primary">{b.start_time} - {b.end_time} ({b.duration_hours} Jam)</div>
+                            </>
+                          )}
                         </td>
 
                         <td className="p-4 font-extrabold text-navy">

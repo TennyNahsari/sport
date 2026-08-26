@@ -172,12 +172,12 @@ export default function ManualBookingModal({ onClose }) {
                   <div>
                     <label className="block font-semibold text-slate-600 mb-1">No HP / WhatsApp *</label>
                     <input
-                      type="tel"
-                      required
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="0812..."
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-button font-medium"
+                      onChange={(e) => setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-full px-3 py-2 border rounded-button font-medium font-mono"
                     />
                   </div>
                   <div>
