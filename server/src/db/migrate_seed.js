@@ -169,7 +169,13 @@ async function runMigrationAndSeed() {
         ['bank_account_holder', 'SportBook Venue Management'],
         ['qris_merchant_name', 'SportBook Venue QRIS'],
         ['qris_image_url', ''],
-        ['whatsapp_number', '6281234567890']
+        ['whatsapp_number', '6281234567890'],
+        ['instagram_url', 'https://instagram.com'],
+        ['twitter_url', 'https://x.com'],
+        ['youtube_url', 'https://youtube.com'],
+        ['facebook_url', 'https://facebook.com'],
+        ['linkedin_url', 'https://linkedin.com'],
+        ['threads_url', 'https://threads.net']
       ];
       for (const [key, value] of defaultSettings) {
         await client.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING', [key, value]);

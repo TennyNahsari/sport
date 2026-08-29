@@ -45,7 +45,13 @@ router.get('/', async (req, res) => {
       bank_account_holder: 'SportBook Venue Management',
       qris_merchant_name: 'SportBook Venue QRIS',
       qris_image_url: '',
-      whatsapp_number: '6281234567890'
+      whatsapp_number: '6281234567890',
+      instagram_url: 'https://instagram.com',
+      twitter_url: 'https://x.com',
+      youtube_url: 'https://youtube.com',
+      facebook_url: 'https://facebook.com',
+      linkedin_url: 'https://linkedin.com',
+      threads_url: 'https://threads.net'
     };
 
     result.rows.forEach(row => {
@@ -58,7 +64,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT update venue settings (Bank & QRIS & WA)
+// PUT update venue settings (Bank & QRIS & WA & Social Media)
 router.post('/', async (req, res) => {
   res.redirect(307, '/api/settings');
 });
@@ -74,6 +80,12 @@ router.put('/', async (req, res) => {
       bank_account_holder,
       qris_merchant_name,
       whatsapp_number,
+      instagram_url,
+      twitter_url,
+      youtube_url,
+      facebook_url,
+      linkedin_url,
+      threads_url,
       qris_image, // Base64 data string or empty
       qris_action // 'delete' or 'update' or empty
     } = req.body;
@@ -120,6 +132,12 @@ router.put('/', async (req, res) => {
       bank_account_holder: bank_account_holder !== undefined ? bank_account_holder : 'SportBook Venue Management',
       qris_merchant_name: qris_merchant_name !== undefined ? qris_merchant_name : 'SportBook Venue QRIS',
       whatsapp_number: whatsapp_number !== undefined ? whatsapp_number.replace(/[^0-9]/g, '') : '6281234567890',
+      instagram_url: instagram_url !== undefined ? instagram_url : 'https://instagram.com',
+      twitter_url: twitter_url !== undefined ? twitter_url : 'https://x.com',
+      youtube_url: youtube_url !== undefined ? youtube_url : 'https://youtube.com',
+      facebook_url: facebook_url !== undefined ? facebook_url : 'https://facebook.com',
+      linkedin_url: linkedin_url !== undefined ? linkedin_url : 'https://linkedin.com',
+      threads_url: threads_url !== undefined ? threads_url : 'https://threads.net',
       qris_image_url: newQrisUrl
     };
 

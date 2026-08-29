@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, QrCode, Save, Trash2, Upload, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, Copy } from 'lucide-react';
+import { Building2, QrCode, Save, Trash2, Upload, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, Copy, Share2, Instagram, Twitter, Youtube, Facebook, Linkedin, AtSign } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function SettingsTab() {
@@ -11,6 +11,14 @@ export default function SettingsTab() {
   const [qrisMerchantName, setQrisMerchantName] = useState('SportBook Venue QRIS');
   const [qrisImageUrl, setQrisImageUrl] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('6281234567890');
+
+  // Social Media Links State
+  const [instagramUrl, setInstagramUrl] = useState('https://instagram.com');
+  const [twitterUrl, setTwitterUrl] = useState('https://x.com');
+  const [youtubeUrl, setYoutubeUrl] = useState('https://youtube.com');
+  const [facebookUrl, setFacebookUrl] = useState('https://facebook.com');
+  const [linkedinUrl, setLinkedinUrl] = useState('https://linkedin.com');
+  const [threadsUrl, setThreadsUrl] = useState('https://threads.net');
 
   // Image Upload State
   const [qrisPreview, setQrisPreview] = useState('');
@@ -41,6 +49,12 @@ export default function SettingsTab() {
         setQrisImageUrl(s.qris_image_url || '');
         setQrisPreview(s.qris_image_url || '');
         setWhatsappNumber(s.whatsapp_number || '6281234567890');
+        setInstagramUrl(s.instagram_url !== undefined ? s.instagram_url : 'https://instagram.com');
+        setTwitterUrl(s.twitter_url !== undefined ? s.twitter_url : 'https://x.com');
+        setYoutubeUrl(s.youtube_url !== undefined ? s.youtube_url : 'https://youtube.com');
+        setFacebookUrl(s.facebook_url !== undefined ? s.facebook_url : 'https://facebook.com');
+        setLinkedinUrl(s.linkedin_url !== undefined ? s.linkedin_url : 'https://linkedin.com');
+        setThreadsUrl(s.threads_url !== undefined ? s.threads_url : 'https://threads.net');
         setQrisBase64('');
       }
     } catch (err) {
@@ -83,6 +97,12 @@ export default function SettingsTab() {
           bank_account_holder: bankAccountHolder,
           qris_merchant_name: qrisMerchantName,
           whatsapp_number: whatsappNumber,
+          instagram_url: instagramUrl,
+          twitter_url: twitterUrl,
+          youtube_url: youtubeUrl,
+          facebook_url: facebookUrl,
+          linkedin_url: linkedinUrl,
+          threads_url: threadsUrl,
           qris_image: qrisBase64 || ''
         })
       });
@@ -258,7 +278,112 @@ export default function SettingsTab() {
           </div>
         </div>
 
-        {/* SECTION 3: QRIS SETTINGS & IMAGE MANAGEMENT */}
+        {/* SECTION 3: SOCIAL MEDIA LINKS */}
+        <div className="bg-white p-6 rounded-card border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center space-x-2.5 border-b border-slate-100 pb-3">
+            <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-navy text-base">Social Media Links</h3>
+              <p className="text-[11px] text-slate-500">Atur link akun media sosial yang tampil di Footer website (Kosongkan jika tidak ingin ditampilkan)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Instagram */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                <span>Instagram URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://instagram.com/sportbook"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Twitter / X */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <Twitter className="w-3.5 h-3.5 text-sky-500" />
+                <span>Twitter / X URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://x.com/sportbook"
+                value={twitterUrl}
+                onChange={(e) => setTwitterUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* YouTube */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <Youtube className="w-3.5 h-3.5 text-red-600" />
+                <span>YouTube URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://youtube.com/@sportbook"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Facebook */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                <span>Facebook URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://facebook.com/sportbook"
+                value={facebookUrl}
+                onChange={(e) => setFacebookUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* LinkedIn */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <Linkedin className="w-3.5 h-3.5 text-blue-700" />
+                <span>LinkedIn URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://linkedin.com/company/sportbook"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Threads */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                <AtSign className="w-3.5 h-3.5 text-slate-800" />
+                <span>Threads URL</span>
+              </label>
+              <input
+                type="url"
+                placeholder="https://threads.net/@sportbook"
+                value={threadsUrl}
+                onChange={(e) => setThreadsUrl(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-medium text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: QRIS SETTINGS & IMAGE MANAGEMENT */}
         <div className="bg-white p-6 rounded-card border border-slate-200 shadow-sm space-y-5">
           <div className="flex items-center space-x-2.5 border-b border-slate-100 pb-3">
             <div className="w-9 h-9 rounded-lg bg-sportgreen-light text-sportgreen flex items-center justify-center font-bold">
