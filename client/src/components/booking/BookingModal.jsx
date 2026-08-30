@@ -285,6 +285,29 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                 <p className="text-xs text-slate-500 mt-1">{t('saveCodeNotice')}</p>
               </div>
 
+              {/* Late Payment Notice Card */}
+              {confirmedBooking.payment_deadline && (
+                <div className="bg-amber-50 border border-amber-300 rounded-card p-3.5 text-left text-xs space-y-1.5 shadow-sm">
+                  <div className="flex items-center space-x-2 font-bold text-amber-900">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>{t('paymentDeadlineTitle')}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded border border-amber-200 text-slate-800 space-y-1">
+                    {confirmedBooking.created_at && (
+                      <p className="text-[11px] text-slate-500">
+                        {t('orderCreatedTime')}: <strong className="font-mono text-slate-700">{new Date(confirmedBooking.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</strong>
+                      </p>
+                    )}
+                    <p className="text-xs font-bold text-red-700">
+                      {t('paymentDeadlineTime')}: <span className="font-mono text-sm underline">{new Date(confirmedBooking.payment_deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      Harap selesaikan pembayaran sebelum jam <strong className="text-slate-700">{new Date(confirmedBooking.payment_deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</strong>. Melewati jam ini dianggap telat bayar.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {confirmedBooking.is_merged && (
                 <div className="bg-blue-50 border border-blue-200 text-blue-900 p-3 rounded-button text-xs font-bold text-left flex items-center space-x-2">
                   <ShieldCheck className="w-5 h-5 text-primary shrink-0" />

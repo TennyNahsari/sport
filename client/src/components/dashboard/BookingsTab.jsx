@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X } from 'lucide-react';
+import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 
@@ -26,6 +26,10 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   const [exportStartDate, setExportStartDate] = useState(todayStr);
   const [exportEndDate, setExportEndDate] = useState(todayStr);
 
+  // Refresh & Cleanup Overdue State
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMsg, setRefreshMsg] = useState('');
+
   const fetchBookings = () => {
     setLoading(true);
     let url = `/api/bookings?search=${encodeURIComponent(searchTerm)}`;
@@ -38,6 +42,28 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
         if (res.success) setBookings(res.data);
       })
       .finally(() => setLoading(false));
+  };
+
+  const handleRefreshBookings = async () => {
+    setRefreshing(true);
+    setRefreshMsg('');
+    try {
+      const res = await fetch('/api/bookings/cleanup-overdue', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        if (data.cancelledCount > 0) {
+          setRefreshMsg(`${data.cancelledCount} ${t('autoCancelledMsg')}`);
+        } else {
+          setRefreshMsg(t('noOverdueMsg'));
+        }
+        setTimeout(() => setRefreshMsg(''), 5000);
+      }
+    } catch (err) {
+      console.error('Refresh cleanup error:', err);
+    } finally {
+      fetchBookings();
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -196,7 +222,19 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
 
   return (
     <div className="space-y-6">
-      
+
+      {refreshMsg && (
+        <div className="p-3.5 rounded-button bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{refreshMsg}</span>
+          </div>
+          <button onClick={() => setRefreshMsg('')} className="text-amber-700 hover:text-navy">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Search & Filter Header */}
       <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         
@@ -213,6 +251,17 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefreshBookings}
+            disabled={refreshing}
+            className="py-2 px-3.5 bg-navy hover:bg-slate-800 text-white rounded-button text-xs font-bold flex items-center space-x-1.5 shadow-md transition-all disabled:opacity-50"
+            title="Refresh data & auto-cancel booking yang lewat telat bayar"
+          >
+            <RefreshCw className={`w-4 h-4 text-sportgreen ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? t('refreshing') : t('btnRefreshBookings')}</span>
+          </button>
+
           {/* Status filter */}
           <select
             value={statusFilter}
@@ -264,6 +313,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                     <th className="p-4">{t('tableCustomer')}</th>
                     <th className="p-4">{t('tableCourtSport')}</th>
                     <th className="p-4">{t('tableDateTime')}</th>
+                    <th className="p-4">{t('paymentDeadlineTime')}</th>
                     <th className="p-4">{t('tableTotalPrice')}</th>
                     <th className="p-4">{t('tableProof')}</th>
                     <th className="p-4">{t('tableStatus')}</th>
@@ -273,7 +323,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                 <tbody className="divide-y divide-slate-100 font-medium text-navy">
                   {currentDisplayedBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">{t('noBookingsFound')}</td>
+                      <td colSpan={9} className="p-8 text-center text-slate-400">{t('noBookingsFound')}</td>
                     </tr>
                   ) : (
                     currentDisplayedBookings.map((b) => (
@@ -330,6 +380,29 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                               <div className="font-bold">{b.booking_date}</div>
                               <div className="text-[11px] font-bold text-primary">{b.start_time} - {b.end_time} ({b.duration_hours} Jam)</div>
                             </>
+                          )}
+                        </td>
+
+                        {/* Column Batas Waktu Pembayaran */}
+                        <td className="p-4">
+                          {b.payment_deadline ? (
+                            <div>
+                              <div className="font-mono font-extrabold text-navy flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>{new Date(b.payment_deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
+                              </div>
+                              {(b.booking_status || 'unpaid').toLowerCase() === 'unpaid' && new Date() > new Date(b.payment_deadline) ? (
+                                <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 text-[10px] font-extrabold uppercase">
+                                  {t('latePaymentNotice')}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  {new Date(b.payment_deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-[11px] italic">-</span>
                           )}
                         </td>
 

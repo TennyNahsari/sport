@@ -51,7 +51,8 @@ router.get('/', async (req, res) => {
       youtube_url: 'https://youtube.com',
       facebook_url: 'https://facebook.com',
       linkedin_url: 'https://linkedin.com',
-      threads_url: 'https://threads.net'
+      threads_url: 'https://threads.net',
+      payment_limit_hours: '1'
     };
 
     result.rows.forEach(row => {
@@ -86,6 +87,7 @@ router.put('/', async (req, res) => {
       facebook_url,
       linkedin_url,
       threads_url,
+      payment_limit_hours,
       qris_image, // Base64 data string or empty
       qris_action // 'delete' or 'update' or empty
     } = req.body;
@@ -138,6 +140,7 @@ router.put('/', async (req, res) => {
       facebook_url: facebook_url !== undefined ? facebook_url : 'https://facebook.com',
       linkedin_url: linkedin_url !== undefined ? linkedin_url : 'https://linkedin.com',
       threads_url: threads_url !== undefined ? threads_url : 'https://threads.net',
+      payment_limit_hours: payment_limit_hours !== undefined ? String(payment_limit_hours) : '1',
       qris_image_url: newQrisUrl
     };
 

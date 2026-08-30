@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, QrCode, Save, Trash2, Upload, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, Copy, Share2, Instagram, Twitter, Youtube, Facebook, Linkedin, AtSign } from 'lucide-react';
+import { Building2, QrCode, Save, Trash2, Upload, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, Copy, Share2, Instagram, Twitter, Youtube, Facebook, Linkedin, AtSign, Clock } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function SettingsTab() {
@@ -11,6 +11,7 @@ export default function SettingsTab() {
   const [qrisMerchantName, setQrisMerchantName] = useState('SportBook Venue QRIS');
   const [qrisImageUrl, setQrisImageUrl] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('6281234567890');
+  const [paymentLimitHours, setPaymentLimitHours] = useState('1');
 
   // Social Media Links State
   const [instagramUrl, setInstagramUrl] = useState('https://instagram.com');
@@ -55,6 +56,7 @@ export default function SettingsTab() {
         setFacebookUrl(s.facebook_url !== undefined ? s.facebook_url : 'https://facebook.com');
         setLinkedinUrl(s.linkedin_url !== undefined ? s.linkedin_url : 'https://linkedin.com');
         setThreadsUrl(s.threads_url !== undefined ? s.threads_url : 'https://threads.net');
+        setPaymentLimitHours(s.payment_limit_hours !== undefined ? s.payment_limit_hours : '1');
         setQrisBase64('');
       }
     } catch (err) {
@@ -103,6 +105,7 @@ export default function SettingsTab() {
           facebook_url: facebookUrl,
           linkedin_url: linkedinUrl,
           threads_url: threadsUrl,
+          payment_limit_hours: paymentLimitHours,
           qris_image: qrisBase64 || ''
         })
       });
@@ -253,7 +256,39 @@ export default function SettingsTab() {
           </div>
         </div>
 
-        {/* SECTION 2: WHATSAPP SUPPORT SETTINGS */}
+        {/* SECTION 2: PAYMENT DEADLINE LIMIT SETTINGS */}
+        <div className="bg-white p-6 rounded-card border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center space-x-2.5 border-b border-slate-100 pb-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-navy text-base">{t('paymentLimitHoursLabel')}</h3>
+              <p className="text-[11px] text-slate-500">{t('paymentLimitHoursSub')}</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t('paymentLimitHoursLabel')}</label>
+            <div className="flex items-center space-x-3">
+              <input
+                type="number"
+                min="1"
+                max="24"
+                required
+                value={paymentLimitHours}
+                onChange={(e) => setPaymentLimitHours(e.target.value)}
+                className="w-32 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-mono font-bold text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <span className="text-xs font-bold text-slate-600">Jam (Hours)</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Contoh: Jika diset 1 jam, customer booking jam 12:00 maka batas waktu telat bayar adalah jam 13:00.
+            </p>
+          </div>
+        </div>
+
+        {/* SECTION 3: WHATSAPP SUPPORT SETTINGS */}
         <div className="bg-white p-6 rounded-card border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center space-x-2.5 border-b border-slate-100 pb-3">
             <div className="w-9 h-9 rounded-lg bg-green-50 text-[#25D366] flex items-center justify-center font-bold">

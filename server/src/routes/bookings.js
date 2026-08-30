@@ -2,9 +2,47 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
+// POST Auto-cancel overdue bookings (without payment proof)
+router.post('/cleanup-overdue', async (req, res) => {
+  try {
+    const result = await db.query(`
+      UPDATE bookings
+      SET booking_status = 'cancelled'
+      WHERE LOWER(payment_status) = 'unpaid'
+        AND LOWER(booking_status) NOT IN ('cancelled', 'finished', 'paid')
+        AND (payment_proof IS NULL OR TRIM(payment_proof) = '')
+        AND payment_deadline IS NOT NULL
+        AND payment_deadline < NOW()
+      RETURNING booking_code
+    `);
+
+    const cancelledCount = result.rows.length;
+    res.json({
+      success: true,
+      cancelledCount,
+      message: cancelledCount > 0
+        ? `${cancelledCount} booking telat bayar telah otomatis diubah statusnya menjadi Cancelled.`
+        : 'Tidak ada booking telat bayar yang perlu dibatalkan.'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // GET all bookings with filters (Grouped by booking_code)
 router.get('/', async (req, res) => {
   try {
+    // Auto-cancel overdue unpaid bookings without payment proof before listing
+    await db.query(`
+      UPDATE bookings
+      SET booking_status = 'cancelled'
+      WHERE LOWER(payment_status) = 'unpaid'
+        AND LOWER(booking_status) NOT IN ('cancelled', 'finished', 'paid')
+        AND (payment_proof IS NULL OR TRIM(payment_proof) = '')
+        AND payment_deadline IS NOT NULL
+        AND payment_deadline < NOW()
+    `);
+
     const { date, court_id, booking_status, payment_status, search } = req.query;
 
     let query = `
@@ -136,6 +174,8 @@ router.get('/check/:code', async (req, res) => {
         payment_status: firstItem.payment_status,
         booking_status: firstItem.booking_status,
         payment_proof: firstItem.payment_proof,
+        payment_deadline: firstItem.payment_deadline,
+        created_at: firstItem.created_at,
         total_price: totalGrandPrice,
         items,
         court_name: items.map(i => i.court_name).join(', '),
@@ -292,7 +332,7 @@ router.post('/', async (req, res) => {
 
     // Check if customer has existing UNPAID active booking with EXACT SAME NAME (case-insensitive) & PHONE
     const existingUnpaidRes = await client.query(`
-      SELECT b.booking_code, b.payment_proof
+      SELECT b.booking_code, b.payment_proof, b.payment_deadline
       FROM bookings b
       JOIN customers cust ON b.customer_id = cust.id
       WHERE LOWER(TRIM(cust.name)) = LOWER(TRIM($1))
@@ -306,15 +346,23 @@ router.post('/', async (req, res) => {
     let booking_code;
     let is_merged = false;
     let existingPaymentProof = null;
+    let payment_deadline = null;
+
+    // Fetch venue payment limit hours setting (default: 1 hour)
+    const limitSettingRes = await client.query("SELECT value FROM settings WHERE key = 'payment_limit_hours'");
+    const limitHours = parseInt((limitSettingRes.rows[0] && limitSettingRes.rows[0].value) || '1') || 1;
+    const computedDeadline = new Date(Date.now() + limitHours * 60 * 60 * 1000);
 
     if (existingUnpaidRes.rows.length > 0) {
       booking_code = existingUnpaidRes.rows[0].booking_code;
       existingPaymentProof = existingUnpaidRes.rows[0].payment_proof;
+      payment_deadline = existingUnpaidRes.rows[0].payment_deadline || computedDeadline;
       is_merged = true;
     } else {
       const ymStr = booking_date ? booking_date.replace(/-/g, '').substring(0, 6) : new Date().toISOString().slice(0, 7).replace('-', '');
       const randomSeq = Math.floor(10000 + Math.random() * 90000);
       booking_code = `SB-${ymStr}-${randomSeq}`;
+      payment_deadline = computedDeadline;
     }
 
     const total_price = court.price_per_hour * parseInt(duration_hours);
@@ -324,10 +372,10 @@ router.post('/', async (req, res) => {
     const newBookingRes = await client.query(`
       INSERT INTO bookings (
         booking_code, court_id, customer_id, booking_date, start_time, end_time,
-        duration_hours, total_price, payment_status, booking_status, payment_proof
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        duration_hours, total_price, payment_status, booking_status, payment_proof, payment_deadline
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
-    `, [booking_code, court_id, customer_id, booking_date, start_time, end_time, parseInt(duration_hours), total_price, initialPaymentStatus, initialBookingStatus, existingPaymentProof]);
+    `, [booking_code, court_id, customer_id, booking_date, start_time, end_time, parseInt(duration_hours), total_price, initialPaymentStatus, initialBookingStatus, existingPaymentProof, payment_deadline]);
 
     await client.query('COMMIT');
 
@@ -360,6 +408,8 @@ router.post('/', async (req, res) => {
         payment_status: firstItem.payment_status,
         booking_status: firstItem.booking_status,
         payment_proof: firstItem.payment_proof,
+        payment_deadline: firstItem.payment_deadline,
+        created_at: firstItem.created_at,
         total_price: totalGrandPrice,
         items,
         court_name: items.map(i => i.court_name).join(', '),

@@ -57,6 +57,7 @@ async function runMigrationAndSeed() {
         total_price INT NOT NULL,
         payment_status VARCHAR(20) DEFAULT 'unpaid',
         payment_proof TEXT,
+        payment_deadline TIMESTAMP,
         booking_status VARCHAR(20) DEFAULT 'unpaid',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -75,6 +76,7 @@ async function runMigrationAndSeed() {
       );
 
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_proof TEXT;
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_deadline TIMESTAMP;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_status_check;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_booking_code_key;
@@ -143,11 +145,11 @@ async function runMigrationAndSeed() {
       const ymSeed = todayStr.replace(/-/g, '').substring(0, 6);
 
       await client.query(`
-        INSERT INTO bookings (booking_code, court_id, customer_id, booking_date, start_time, end_time, duration_hours, total_price, payment_status, booking_status)
+        INSERT INTO bookings (booking_code, court_id, customer_id, booking_date, start_time, end_time, duration_hours, total_price, payment_status, booking_status, payment_deadline)
         VALUES 
-        ('SB-' || $4 || '-1001', 1, $1, $5, '19:00', '21:00', 2, 160000, 'paid', 'paid'),
-        ('SB-' || $4 || '-1002', 2, $2, $5, '18:00', '19:00', 1, 80000, 'paid', 'paid'),
-        ('SB-' || $4 || '-1003', 4, $3, $5, '20:00', '22:00', 2, 440000, 'unpaid', 'unpaid')
+        ('SB-' || $4 || '-1001', 1, $1, $5, '19:00', '21:00', 2, 160000, 'paid', 'paid', CURRENT_TIMESTAMP + INTERVAL '1 hour'),
+        ('SB-' || $4 || '-1002', 2, $2, $5, '18:00', '19:00', 1, 80000, 'paid', 'paid', CURRENT_TIMESTAMP + INTERVAL '1 hour'),
+        ('SB-' || $4 || '-1003', 4, $3, $5, '20:00', '22:00', 2, 440000, 'unpaid', 'unpaid', CURRENT_TIMESTAMP + INTERVAL '1 hour')
       `, [cust1.rows[0].id, cust2.rows[0].id, cust3.rows[0].id, ymSeed, todayStr]);
     }
 
@@ -175,7 +177,8 @@ async function runMigrationAndSeed() {
         ['youtube_url', 'https://youtube.com'],
         ['facebook_url', 'https://facebook.com'],
         ['linkedin_url', 'https://linkedin.com'],
-        ['threads_url', 'https://threads.net']
+        ['threads_url', 'https://threads.net'],
+        ['payment_limit_hours', '1']
       ];
       for (const [key, value] of defaultSettings) {
         await client.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING', [key, value]);

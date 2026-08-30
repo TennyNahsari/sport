@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink, QrCode, Copy } from 'lucide-react';
+import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink, QrCode, Copy, Clock } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function CheckBookingModal({ onClose }) {
@@ -190,12 +190,35 @@ export default function CheckBookingModal({ onClose }) {
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">{t('paymentStatusLabel')}</span>
                     <span className={`inline-block mt-0.5 px-2.5 py-1 rounded text-[11px] font-extrabold uppercase ${
-                      bookingData.payment_status === 'paid' || bookingData.payment_status === 'Paid' ? 'bg-sportgreen-light text-sportgreen border border-sportgreen/30' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                      bookingData.payment_status === 'paid' || bookingData.payment_status === 'Paid'
+                        ? 'bg-sportgreen-light text-sportgreen border border-sportgreen/30'
+                        : ((bookingData.payment_status || '').toLowerCase() === 'unpaid' && bookingData.payment_deadline && new Date() > new Date(bookingData.payment_deadline))
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-amber-50 text-amber-600 border border-amber-200'
                     }`}>
-                      {bookingData.payment_status}
+                      {((bookingData.payment_status || '').toLowerCase() === 'unpaid' && bookingData.payment_deadline && new Date() > new Date(bookingData.payment_deadline))
+                        ? `${t('latePaymentNotice')}`
+                        : bookingData.payment_status}
                     </span>
                   </div>
                 </div>
+
+                {/* Deadline detail row */}
+                {bookingData.payment_deadline && (
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-semibold flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{t('paymentDeadlineTime')}:</span>
+                    </span>
+                    <span className={`font-mono font-bold ${
+                      ((bookingData.payment_status || '').toLowerCase() === 'unpaid' && new Date() > new Date(bookingData.payment_deadline))
+                        ? 'text-red-600 underline font-extrabold'
+                        : 'text-navy'
+                    }`}>
+                      {new Date(bookingData.payment_deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Details Ticket Summary */}

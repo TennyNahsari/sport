@@ -106,6 +106,12 @@ export const translations = {
     qrisPaymentTitle: 'Pembayaran via QRIS',
     qrisScanDesc: 'Scan QRIS menggunakan GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll.',
     processing: 'Memproses...',
+    paymentDeadlineTitle: 'Informasi Batas Waktu Pembayaran',
+    paymentDeadlineTime: 'Batas Waktu Telat Bayar',
+    orderCreatedTime: 'Waktu Booking Dibuat',
+    latePaymentNotice: 'Telat Bayar (Lewat Batas Waktu)',
+    paymentLimitHoursLabel: 'Batas Waktu Pembayaran (Jam)',
+    paymentLimitHoursSub: 'Atur batas jam telat bayar setelah booking dibuat (default: 1 jam)',
 
     // Check Booking Modal
     checkModalTitle: 'Cek Status Booking & Konfirmasi Bayar',
@@ -202,6 +208,9 @@ export const translations = {
     transferProofModalTitle: 'Bukti Transfer Pembayaran',
     verifySetPaidBtn: 'VERIFIKASI & SET PAID',
     deleteProofBtn: 'Hapus Bukti',
+    btnRefreshBookings: 'REFRESH & CEK TELAT BAYAR',
+    autoCancelledMsg: 'booking telat bayar telah otomatis diubah statusnya menjadi Cancelled.',
+    noOverdueMsg: 'Tidak ada booking telat bayar yang perlu dibatalkan.',
 
     // Calendar Tab
     visualCalendarTitle: 'Visual Court Schedule Grid',
@@ -386,6 +395,12 @@ export const translations = {
     qrisPaymentTitle: 'Payment via QRIS',
     qrisScanDesc: 'Scan QRIS using GoPay, OVO, Dana, ShopeePay, Mobile Banking, etc.',
     processing: 'Processing...',
+    paymentDeadlineTitle: 'Payment Deadline Information',
+    paymentDeadlineTime: 'Late Payment Deadline',
+    orderCreatedTime: 'Booking Creation Time',
+    latePaymentNotice: 'Overdue / Late Payment',
+    paymentLimitHoursLabel: 'Payment Deadline Limit (Hours)',
+    paymentLimitHoursSub: 'Set payment deadline duration after booking creation (default: 1 hour)',
 
     // Check Booking Modal
     checkModalTitle: 'Check Booking Status & Payment',
@@ -482,6 +497,9 @@ export const translations = {
     transferProofModalTitle: 'Payment Transfer Proof',
     verifySetPaidBtn: 'VERIFY & SET PAID',
     deleteProofBtn: 'Delete Proof',
+    btnRefreshBookings: 'REFRESH & CHECK OVERDUE',
+    autoCancelledMsg: 'overdue booking(s) automatically cancelled.',
+    noOverdueMsg: 'No overdue bookings found to cancel.',
 
     // Calendar Tab
     visualCalendarTitle: 'Visual Court Schedule Grid',
