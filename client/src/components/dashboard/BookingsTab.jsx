@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw } from 'lucide-react';
+import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw, Printer } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
+import PrintReceiptModal from './PrintReceiptModal';
 
 export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) {
   const { t } = useLanguage();
@@ -10,8 +11,8 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState(filterPaymentOnly ? 'unpaid' : '');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(filterPaymentOnly ? 'finished' : '');
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +21,9 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   // Proof Modal Viewer State
   const [viewProofModal, setViewProofModal] = useState(null);
   const [deletingProof, setDeletingProof] = useState(false);
+
+  // Print Receipt Modal State
+  const [printReceiptModal, setPrintReceiptModal] = useState(null);
 
   // Export Excel Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -222,6 +226,18 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
 
   return (
     <div className="space-y-6">
+
+      {filterPaymentOnly && (
+        <div className="p-3.5 rounded-button bg-blue-50 border border-blue-200 text-primary text-xs font-bold flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center space-x-2">
+            <DollarSign className="w-4.5 h-4.5 text-primary shrink-0" />
+            <span>{t('paymentsFinishedNotice')}</span>
+          </div>
+          <span className="px-2 py-0.5 rounded bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider">
+            STATUS: FINISHED
+          </span>
+        </div>
+      )}
 
       {refreshMsg && (
         <div className="p-3.5 rounded-button bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center justify-between shadow-sm animate-fade-in">
@@ -442,6 +458,15 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
 
                         {/* Actions */}
                         <td className="p-4 text-center space-x-2">
+                          <button
+                            onClick={() => setPrintReceiptModal(b)}
+                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 rounded text-[11px] font-bold border border-emerald-200 transition-all inline-flex items-center gap-1 shadow-2xs"
+                            title={t('btnPrintReceipt')}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>{t('btnPrintReceiptShort')}</span>
+                          </button>
+
                           {b.booking_status !== 'cancelled' && (
                             <button
                               onClick={() => handleCancelBooking(b.id)}
@@ -609,6 +634,19 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                 </button>
 
                 <button
+                  onClick={() => {
+                    const targetBooking = viewProofModal;
+                    setViewProofModal(null);
+                    setPrintReceiptModal(targetBooking);
+                  }}
+                  className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold rounded-button text-xs border border-emerald-200 flex items-center space-x-1 transition-all"
+                  title={t('btnPrintReceipt')}
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>{t('btnPrintReceiptShort')}</span>
+                </button>
+
+                <button
                   onClick={() => setViewProofModal(null)}
                   className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 font-bold rounded-button text-slate-700 text-xs"
                 >
@@ -628,6 +666,14 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
 
           </div>
         </div>
+      )}
+
+      {/* Printable Receipt Modal */}
+      {printReceiptModal && (
+        <PrintReceiptModal
+          booking={printReceiptModal}
+          onClose={() => setPrintReceiptModal(null)}
+        />
       )}
 
     </div>
