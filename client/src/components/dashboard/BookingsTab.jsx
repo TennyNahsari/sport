@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw, Printer } from 'lucide-react';
+import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw, Printer, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
+import { getWaUrl } from '../../utils/whatsapp';
 import PrintReceiptModal from './PrintReceiptModal';
 
 export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) {
@@ -351,7 +352,22 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
 
                         <td className="p-4">
                           <div className="font-extrabold">{b.customer_name}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">{b.customer_phone}</div>
+                          <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                            <span>{b.customer_phone}</span>
+                            {b.customer_phone && (
+                              <a
+                                href={getWaUrl(b.customer_phone, `Halo ${b.customer_name}, mengenai booking ${b.booking_code}`)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#25D366] hover:bg-[#20bd5a] text-white text-[10px] font-bold shadow-2xs transition-all hover:scale-105"
+                                title={`Chat WhatsApp dengan ${b.customer_name}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MessageCircle className="w-3 h-3 fill-current" />
+                                <span>WA</span>
+                              </a>
+                            )}
+                          </div>
                           {b.customer_email && (
                             <div className="text-[10px] text-slate-400 font-medium truncate max-w-[145px]">{b.customer_email}</div>
                           )}

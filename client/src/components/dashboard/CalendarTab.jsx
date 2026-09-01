@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Filter, CheckCircle2, User, XCircle, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Filter, CheckCircle2, User, XCircle, Trash2, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { getWaUrl } from '../../utils/whatsapp';
 
 export default function CalendarTab() {
   const { t } = useLanguage();
@@ -170,9 +171,23 @@ export default function CalendarTab() {
                 <span className="text-slate-500 font-semibold">{t('tableBookingCode')}:</span>
                 <span className="font-mono font-bold text-primary">{selectedBooking.booking_code}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-semibold">{t('tableCustomer')}:</span>
-                <span className="font-bold">{selectedBooking.customer_name}</span>
+                <div className="text-right flex items-center gap-1.5">
+                  <span className="font-bold">{selectedBooking.customer_name}</span>
+                  {selectedBooking.customer_phone && (
+                    <a
+                      href={getWaUrl(selectedBooking.customer_phone, `Halo ${selectedBooking.customer_name}, mengenai booking ${selectedBooking.booking_code}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#25D366] hover:bg-[#20bd5a] text-white text-[10px] font-bold shadow-2xs transition-all hover:scale-105"
+                      title={`Chat WA ${selectedBooking.customer_name}`}
+                    >
+                      <MessageCircle className="w-3 h-3 fill-current" />
+                      <span>WA</span>
+                    </a>
+                  )}
+                </div>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-semibold">{t('tableCourtSport')}:</span>

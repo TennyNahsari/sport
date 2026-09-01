@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CalendarCheck, DollarSign, Activity, CheckCircle, Clock, 
-  TrendingUp, Users, PlusCircle, ArrowUpRight, ShieldCheck 
+  TrendingUp, Users, PlusCircle, ArrowUpRight, ShieldCheck, MessageCircle 
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { getWaUrl } from '../../utils/whatsapp';
 
 export default function OverviewTab({ onOpenManualBooking }) {
   const { t } = useLanguage();
@@ -141,7 +142,22 @@ export default function OverviewTab({ onOpenManualBooking }) {
                       </td>
                       <td className="p-3">
                         <div>{b.customer_name}</div>
-                        <div className="text-[10px] text-slate-400">{b.customer_phone}</div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <span>{b.customer_phone}</span>
+                          {b.customer_phone && (
+                            <a
+                              href={getWaUrl(b.customer_phone, `Halo ${b.customer_name}, mengenai booking ${b.booking_code}`)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#25D366] hover:bg-[#20bd5a] text-white text-[9px] font-bold shadow-2xs transition-all hover:scale-105"
+                              title={`Chat WA ${b.customer_name}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MessageCircle className="w-2.5 h-2.5 fill-current" />
+                              <span>WA</span>
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${

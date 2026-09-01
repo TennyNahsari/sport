@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Phone, Mail, Award, DollarSign, ChevronLeft, ChevronRight, Search, Trash2, FileSpreadsheet, Download } from 'lucide-react';
+import { Users, Phone, Mail, Award, DollarSign, ChevronLeft, ChevronRight, Search, Trash2, FileSpreadsheet, Download, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
+import { getWaUrl } from '../../utils/whatsapp';
 
 export default function CustomersTab() {
   const { t } = useLanguage();
@@ -133,7 +134,23 @@ export default function CustomersTab() {
                           </div>
                           <span>{c.name}</span>
                         </td>
-                        <td className="p-4 font-mono font-bold text-slate-700">{c.phone}</td>
+                        <td className="p-4 font-mono font-bold text-slate-700">
+                          <div className="flex items-center gap-1.5">
+                            <span>{c.phone}</span>
+                            {c.phone && (
+                              <a
+                                href={getWaUrl(c.phone, `Halo ${c.name}`)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#25D366] hover:bg-[#20bd5a] text-white text-[10px] font-bold shadow-2xs transition-all hover:scale-105"
+                                title={`Chat WhatsApp dengan ${c.name}`}
+                              >
+                                <MessageCircle className="w-3 h-3 fill-current" />
+                                <span>WA</span>
+                              </a>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4 text-slate-500">{c.email || '-'}</td>
                         <td className="p-4 font-extrabold text-primary">{c.total_bookings} {t('sessions')}</td>
                         <td className="p-4 font-extrabold text-sportgreen">
