@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -157,8 +158,10 @@ async function runMigrationAndSeed() {
     const usersRes = await client.query('SELECT COUNT(*) FROM users');
     if (parseInt(usersRes.rows[0].count) === 0) {
       console.log('[PostgreSQL] Seeding staff users (admin & operator)...');
-      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['admin', 'admin123', 'Super Admin', 'admin']);
-      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['operator', 'op123', 'Venue Operator', 'operator']);
+      const adminPassHash = await bcrypt.hash('admin123', 10);
+      const operatorPassHash = await bcrypt.hash('op123', 10);
+      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['admin', adminPassHash, 'Super Admin', 'admin']);
+      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['operator', operatorPassHash, 'Venue Operator', 'operator']);
     }
 
     // Seed default settings if empty

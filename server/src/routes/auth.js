@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 
 // Staff / Admin Login
@@ -7,13 +8,20 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const userRes = await db.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
+    const userRes = await db.query('SELECT * FROM users WHERE username = $1', [username]);
 
     if (userRes.rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Username atau password salah' });
     }
 
     const user = userRes.rows[0];
+
+    // Cek password menggunakan bcrypt (atau fallback plaintext untuk kompatibilitas data lama)
+    const isMatch = await bcrypt.compare(password, user.password) || user.password === password;
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Username atau password salah' });
+    }
 
     res.json({
       success: true,
