@@ -4,7 +4,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 import { getWaUrl } from '../../utils/whatsapp';
 
-export default function CustomersTab() {
+export default function CustomersTab({ currentUser }) {
   const { t } = useLanguage();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);

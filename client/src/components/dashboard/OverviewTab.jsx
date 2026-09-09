@@ -6,19 +6,25 @@ import {
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getWaUrl } from '../../utils/whatsapp';
 
-export default function OverviewTab({ onOpenManualBooking }) {
+export default function OverviewTab({ onOpenManualBooking, currentUser }) {
   const { t } = useLanguage();
+  const isAdmin = currentUser?.role === 'admin' || !currentUser?.outlet_id;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/reports/dashboard')
+    let url = '/api/reports/dashboard';
+    if (!isAdmin && currentUser?.outlet_id) {
+      url += `?outlet_id=${currentUser.outlet_id}`;
+    }
+
+    fetch(url)
       .then(res => res.json())
       .then(res => {
         if (res.success) setData(res.data);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentUser]);
 
   if (loading) {
     return <div className="p-8 text-center text-slate-500 font-bold">{t('loadingDashboard')}</div>;
@@ -34,6 +40,22 @@ export default function OverviewTab({ onOpenManualBooking }) {
 
   return (
     <div className="space-y-6">
+
+      {/* Operator Outlet Banner */}
+      {!isAdmin && currentUser?.outlet_name && (
+        <div className="p-3.5 bg-gradient-to-r from-blue-900 to-navy text-white rounded-card shadow-sm flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sportgreen animate-pulse"></span>
+            <div>
+              <span className="text-[11px] text-blue-200 uppercase tracking-wider font-bold">Dashboard Cabang:</span>
+              <h4 className="text-sm font-extrabold text-white">{currentUser.outlet_name} ({currentUser.outlet_address || 'Staff Venue'})</h4>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 bg-white/10 text-white rounded text-xs font-bold">
+            Role: Operator
+          </span>
+        </div>
+      )}
       
       {/* Top Stats 4 Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

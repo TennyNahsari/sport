@@ -5,6 +5,7 @@ import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import WhatsAppFloatingButton from './components/common/WhatsAppFloatingButton';
 import HeroSection from './components/landing/HeroSection';
+import OutletSelector from './components/landing/OutletSelector';
 import SportCategories from './components/landing/SportCategories';
 import PopularCourts from './components/landing/PopularCourts';
 import AvailabilityGrid from './components/landing/AvailabilityGrid';
@@ -46,6 +47,8 @@ function MainContent() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  const [outlets, setOutlets] = useState([]);
+  const [selectedOutletId, setSelectedOutletId] = useState('');
   const [sports, setSports] = useState([]);
   const [courts, setCourts] = useState([]);
   const [selectedSportId, setSelectedSportId] = useState('');
@@ -59,6 +62,13 @@ function MainContent() {
   const [showCheckBookingModal, setShowCheckBookingModal] = useState(false);
 
   useEffect(() => {
+    fetch('/api/outlets')
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) setOutlets(res.data);
+      })
+      .catch(err => console.error('Error loading outlets:', err));
+
     fetch('/api/sports')
       .then(res => res.json())
       .then(res => {
@@ -69,6 +79,9 @@ function MainContent() {
 
   useEffect(() => {
     let url = '/api/courts?status=active';
+    if (selectedOutletId) {
+      url += `&outlet_id=${selectedOutletId}`;
+    }
     if (selectedSportId) {
       url += `&sport_id=${selectedSportId}`;
     }
@@ -78,7 +91,7 @@ function MainContent() {
         if (res.success) setCourts(res.data);
       })
       .catch(err => console.error('Error loading courts:', err));
-  }, [selectedSportId]);
+  }, [selectedOutletId, selectedSportId]);
 
   useEffect(() => {
     if (courts.length === 0) return;
@@ -97,7 +110,8 @@ function MainContent() {
     });
   }, [courts, selectedDate]);
 
-  const handleHeroSearch = ({ sportId, date, time }) => {
+  const handleHeroSearch = ({ outletId, sportId, date, time }) => {
+    if (outletId !== undefined) setSelectedOutletId(outletId);
     if (sportId) setSelectedSportId(sportId);
     if (date) setSelectedDate(date);
 
@@ -148,7 +162,13 @@ function MainContent() {
         onOpenCheckBooking={() => setShowCheckBookingModal(true)}
       />
 
-      <HeroSection sports={sports} onSearch={handleHeroSearch} />
+      <HeroSection sports={sports} outlets={outlets} onSearch={handleHeroSearch} />
+
+      <OutletSelector
+        outlets={outlets}
+        selectedOutletId={selectedOutletId}
+        onSelectOutlet={setSelectedOutletId}
+      />
 
       <SportCategories
         sports={sports}

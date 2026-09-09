@@ -2,17 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, DollarSign, Award, Activity } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-export default function ReportsTab() {
+export default function ReportsTab({ currentUser }) {
   const { t } = useLanguage();
+  const isAdmin = currentUser?.role === 'admin' || !currentUser?.outlet_id;
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('/api/reports/dashboard')
+    let url = '/api/reports/dashboard';
+    if (!isAdmin && currentUser?.outlet_id) {
+      url += `?outlet_id=${currentUser.outlet_id}`;
+    }
+
+    fetch(url)
       .then(res => res.json())
       .then(res => {
         if (res.success) setData(res.data);
       });
-  }, []);
+  }, [currentUser]);
 
   if (!data) return <div className="p-8 text-center text-slate-500 font-bold">{t('loadingDashboard')}</div>;
 

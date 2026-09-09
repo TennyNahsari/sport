@@ -1,19 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Filter, CheckCircle2, User, XCircle, Trash2, MessageCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Filter, CheckCircle2, User, XCircle, Trash2, MessageCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { getWaUrl } from '../../utils/whatsapp';
 
-export default function CalendarTab() {
+export default function CalendarTab({ currentUser }) {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
+  const isAdmin = currentUser?.role === 'admin' || !currentUser?.outlet_id;
+  const userOutletId = currentUser?.outlet_id ? String(currentUser.outlet_id) : '';
+
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [outlets, setOutlets] = useState([]);
+  const [selectedOutlet, setSelectedOutlet] = useState(userOutletId);
   const [calendarData, setCalendarData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
+  useEffect(() => {
+    fetch('/api/outlets')
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) setOutlets(res.data);
+      })
+      .catch(err => console.error('Failed to load outlets for calendar:', err));
+  }, []);
+
   const fetchCalendar = () => {
     setLoading(true);
-    fetch(`/api/bookings/calendar?date=${selectedDate}`)
+    let url = `/api/bookings/calendar?date=${selectedDate}`;
+    if (selectedOutlet) url += `&outlet_id=${selectedOutlet}`;
+
+    fetch(url)
       .then(res => res.json())
       .then(res => {
         if (res.success) setCalendarData(res.data);
@@ -23,7 +40,7 @@ export default function CalendarTab() {
 
   useEffect(() => {
     fetchCalendar();
-  }, [selectedDate]);
+  }, [selectedDate, selectedOutlet]);
 
   const handleUpdateBookingStatus = async (bookingId, status) => {
     try {
@@ -73,22 +90,44 @@ export default function CalendarTab() {
     <div className="space-y-6">
       
       {/* Calendar Bar */}
-      <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-card border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 className="font-extrabold text-navy text-lg">{t('visualCalendarTitle')}</h3>
           <p className="text-xs text-slate-500">{t('visualCalendarSub')}</p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-            <CalendarIcon className="w-4 h-4 text-primary" /> {t('labelDate')}:
-          </span>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-button text-xs font-extrabold text-navy cursor-pointer"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Outlet Filter Dropdown */}
+          {isAdmin ? (
+            <div className="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-button border border-slate-200">
+              <Building2 className="w-4 h-4 text-primary shrink-0" />
+              <select
+                value={selectedOutlet}
+                onChange={(e) => setSelectedOutlet(e.target.value)}
+                className="bg-transparent text-xs font-bold text-navy focus:outline-none cursor-pointer"
+              >
+                <option value="">{t('allOutlets')}</option>
+                {outlets.map(o => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-button text-xs font-bold">
+              <Building2 className="w-4 h-4 shrink-0" />
+              <span>Cabang: {currentUser?.outlet_name || 'Outlet Anda'}</span>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-button border border-slate-200">
+            <CalendarIcon className="w-4 h-4 text-primary shrink-0" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-transparent text-xs font-extrabold text-navy cursor-pointer focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 
@@ -103,9 +142,10 @@ export default function CalendarTab() {
                 <tr className="bg-navy text-white font-bold">
                   <th className="p-3 sticky left-0 bg-navy z-10 w-24">{t('hourHeader')}</th>
                   {calendarData.courts.map((court) => (
-                    <th key={court.id} className="p-3 border-l border-slate-800 text-center min-w-[140px]">
+                    <th key={court.id} className="p-3 border-l border-slate-800 text-center min-w-[150px]">
                       <div>{court.name}</div>
-                      <div className="text-[10px] font-normal text-slate-400">{court.sport_name}</div>
+                      <div className="text-[10px] font-semibold text-blue-200">{court.outlet_name || 'Outlet'}</div>
+                      <div className="text-[9px] font-normal text-slate-400">{court.sport_name}</div>
                     </th>
                   ))}
                 </tr>

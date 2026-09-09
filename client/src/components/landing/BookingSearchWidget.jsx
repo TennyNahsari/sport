@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Search, Calendar as CalendarIcon, Clock, Activity } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-export default function BookingSearchWidget({ sports, onSearch }) {
+export default function BookingSearchWidget({ sports, outlets = [], onSearch }) {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const [selectedOutlet, setSelectedOutlet] = useState('');
   const [selectedSport, setSelectedSport] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedTime, setSelectedTime] = useState('19:00');
@@ -13,6 +14,7 @@ export default function BookingSearchWidget({ sports, onSearch }) {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     onSearch({
+      outletId: selectedOutlet,
       sportId: selectedSport,
       date: selectedDate,
       time: selectedTime
@@ -27,23 +29,45 @@ export default function BookingSearchWidget({ sports, onSearch }) {
       </div>
 
       <form onSubmit={handleSearchSubmit} className="space-y-4">
-        {/* Olahraga */}
-        <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-primary" /> {t('labelSport')}
-          </label>
-          <select
-            value={selectedSport}
-            onChange={(e) => setSelectedSport(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-button text-xs sm:text-sm font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">{t('allSports')}</option>
-            {sports.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+        {/* Outlet & Olahraga Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Outlet */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-primary" /> {t('labelOutlet') || 'Outlet'}
+            </label>
+            <select
+              value={selectedOutlet}
+              onChange={(e) => setSelectedOutlet(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-button text-xs sm:text-sm font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">{t('allOutlets')}</option>
+              {outlets.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Olahraga */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-primary" /> {t('labelSport')}
+            </label>
+            <select
+              value={selectedSport}
+              onChange={(e) => setSelectedSport(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-button text-xs sm:text-sm font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">{t('allSports')}</option>
+              {sports.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Tanggal & Jam Grid */}

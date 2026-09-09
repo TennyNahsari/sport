@@ -7,9 +7,11 @@ const { runMigrationAndSeed } = require('./db/database');
 
 const sportsRoutes = require('./routes/sports');
 const courtsRoutes = require('./routes/courts');
+const outletsRoutes = require('./routes/outlets');
 const bookingsRoutes = require('./routes/bookings');
 const reportsRoutes = require('./routes/reports');
 const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 
 const app = express();
@@ -25,9 +27,11 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // API Routes
 app.use('/api/sports', sportsRoutes);
 app.use('/api/courts', courtsRoutes);
+app.use('/api/outlets', outletsRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // Health check endpoint

@@ -10,11 +10,21 @@ const formatCourt = (court) => ({
 // GET all courts
 router.get('/', async (req, res) => {
   try {
-    const { sport_id, status } = req.query;
+    const { sport_id, outlet_id, status, created_by, scope_user_id, scope_outlet_id } = req.query;
     let query = `
-      SELECT c.*, s.name as sport_name, s.slug as sport_slug
+      SELECT c.*, 
+             s.name as sport_name, 
+             s.slug as sport_slug,
+             o.name as outlet_name,
+             o.address as outlet_address,
+             o.phone as outlet_phone,
+             u.name as creator_name,
+             u.username as creator_username,
+             u.role as creator_role
       FROM courts c
       JOIN sports s ON c.sport_id = s.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
+      LEFT JOIN users u ON c.created_by = u.id
       WHERE 1=1
     `;
     const params = [];
@@ -22,6 +32,27 @@ router.get('/', async (req, res) => {
     if (sport_id) {
       params.push(sport_id);
       query += ` AND c.sport_id = $${params.length}`;
+    }
+
+    if (outlet_id) {
+      params.push(outlet_id);
+      query += ` AND c.outlet_id = $${params.length}`;
+    }
+
+    if (created_by) {
+      params.push(created_by);
+      query += ` AND c.created_by = $${params.length}`;
+    }
+
+    // Strict Operator Scoping:
+    // If scope_user_id & scope_outlet_id are provided:
+    // Only show courts in that outlet created by THIS user OR created by admin / unassigned
+    if (scope_outlet_id && scope_user_id) {
+      params.push(scope_outlet_id);
+      const pOutlet = `$${params.length}`;
+      params.push(scope_user_id);
+      const pUser = `$${params.length}`;
+      query += ` AND c.outlet_id = ${pOutlet} AND (c.created_by = ${pUser} OR u.role = 'admin' OR c.created_by IS NULL)`;
     }
 
     if (status) {
@@ -46,9 +77,17 @@ router.get('/:id/availability', async (req, res) => {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
     const courtRes = await db.query(`
-      SELECT c.*, s.name as sport_name
+      SELECT c.*, 
+             s.name as sport_name, 
+             s.slug as sport_slug,
+             o.name as outlet_name,
+             o.address as outlet_address,
+             o.phone as outlet_phone,
+             u.name as creator_name
       FROM courts c
       JOIN sports s ON c.sport_id = s.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
+      LEFT JOIN users u ON c.created_by = u.id
       WHERE c.id = $1
     `, [id]);
 
@@ -96,14 +135,14 @@ router.get('/:id/availability', async (req, res) => {
 // POST new court
 router.post('/', async (req, res) => {
   try {
-    const { sport_id, name, price_per_hour, image_url, facilities, status } = req.body;
+    const { sport_id, outlet_id, name, price_per_hour, image_url, facilities, status, created_by } = req.body;
     const facilitiesJson = JSON.stringify(Array.isArray(facilities) ? facilities : [facilities]);
 
     const result = await db.query(`
-      INSERT INTO courts (sport_id, name, price_per_hour, image_url, facilities, status)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO courts (sport_id, outlet_id, name, price_per_hour, image_url, facilities, status, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
-    `, [sport_id, name, price_per_hour, image_url, facilitiesJson, status || 'active']);
+    `, [sport_id, outlet_id ? parseInt(outlet_id) : null, name, price_per_hour, image_url, facilitiesJson, status || 'active', created_by ? parseInt(created_by) : null]);
 
     res.status(201).json({ success: true, data: formatCourt(result.rows[0]) });
   } catch (error) {
@@ -115,15 +154,16 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { sport_id, name, price_per_hour, image_url, facilities, status } = req.body;
+    const { sport_id, outlet_id, name, price_per_hour, image_url, facilities, status, created_by } = req.body;
     const facilitiesJson = JSON.stringify(Array.isArray(facilities) ? facilities : [facilities]);
 
     const result = await db.query(`
       UPDATE courts
-      SET sport_id = $1, name = $2, price_per_hour = $3, image_url = $4, facilities = $5, status = $6
-      WHERE id = $7
+      SET sport_id = $1, outlet_id = $2, name = $3, price_per_hour = $4, image_url = $5, facilities = $6, status = $7,
+          created_by = COALESCE($8, created_by)
+      WHERE id = $9
       RETURNING *
-    `, [sport_id, name, price_per_hour, image_url, facilitiesJson, status, id]);
+    `, [sport_id, outlet_id ? parseInt(outlet_id) : null, name, price_per_hour, image_url, facilitiesJson, status, created_by ? parseInt(created_by) : null, id]);
 
     res.json({ success: true, data: formatCourt(result.rows[0]) });
   } catch (error) {

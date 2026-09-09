@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, Phone, Mail, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Copy, QrCode } from 'lucide-react';
+import { X, Calendar, Clock, User, Phone, Mail, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Copy, QrCode, Building2, MapPin, Check } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function BookingModal({ court, sports, initialSlot, initialDate, onClose, onBookingSuccess }) {
@@ -40,6 +40,7 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const currentCourt = court || { price_per_hour: 80000, name: 'Selected Court' };
   const totalPrice = (currentCourt.price_per_hour || 80000) * parseInt(durationHours);
@@ -124,7 +125,15 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
               <div className="bg-slate-50 p-3.5 rounded-button border border-slate-200 flex items-center justify-between">
                 <div>
                   <h4 className="font-extrabold text-navy text-sm sm:text-base">{currentCourt.name}</h4>
-                  <p className="text-xs text-slate-500 font-semibold">{currentCourt.sport_name || 'Sports Venue'}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-slate-500 font-semibold">{currentCourt.sport_name || 'Sports Venue'}</span>
+                    {currentCourt.outlet_name && (
+                      <span className="bg-blue-100 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
+                        <span>{currentCourt.outlet_name}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <span className="text-xs text-slate-400 font-medium">{t('courtPriceLabel')}</span>
@@ -281,8 +290,39 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
 
               <div>
                 <span className="text-xs font-bold text-sportgreen uppercase tracking-wider">{t('modalTitleSuccess')}</span>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-navy mt-1">{t('bookingCodeLabel')} {confirmedBooking.booking_code}</h3>
-                <p className="text-xs text-slate-500 mt-1">{t('saveCodeNotice')}</p>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <div 
+                    onClick={() => {
+                      navigator.clipboard.writeText(confirmedBooking.booking_code);
+                      setCopiedCode(true);
+                      setTimeout(() => setCopiedCode(false), 2000);
+                    }}
+                    className="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-2 rounded-card transition-all cursor-pointer group shadow-xs active:scale-95"
+                    title="Klik untuk menyalin Kode Booking"
+                  >
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('bookingCodeLabel')}:</span>
+                    <span className="font-mono text-xl sm:text-2xl font-extrabold text-primary tracking-wider">
+                      {confirmedBooking.booking_code}
+                    </span>
+                    <button
+                      type="button"
+                      className="ml-1 p-1 rounded bg-white text-slate-600 group-hover:text-primary shadow-xs border border-slate-200 flex items-center gap-1 text-[11px] font-bold"
+                    >
+                      {copiedCode ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-sportgreen" />
+                          <span className="text-sportgreen text-[10px]">Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-500 group-hover:text-primary" />
+                          <span className="text-slate-500 group-hover:text-primary text-[10px]">Salin</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">{t('saveCodeNotice')}</p>
               </div>
 
               {/* Late Payment Notice Card */}
@@ -328,8 +368,17 @@ export default function BookingModal({ court, sports, initialSlot, initialDate, 
                   {(confirmedBooking.items && confirmedBooking.items.length > 0 ? confirmedBooking.items : [confirmedBooking]).map((item, idx) => (
                     <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 flex justify-between items-center text-xs">
                       <div>
-                        <p className="font-extrabold text-navy">{item.court_name} <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span></p>
-                        <p className="text-[11px] text-slate-500">{item.booking_date} ({item.start_time} - {item.end_time})</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-extrabold text-navy">{item.court_name}</p>
+                          <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span>
+                        </div>
+                        {(item.outlet_name || confirmedBooking.outlet_name) && (
+                          <p className="text-[10px] text-primary font-bold flex items-center gap-1 mt-0.5">
+                            <Building2 className="w-3 h-3" />
+                            <span>{item.outlet_name || confirmedBooking.outlet_name}</span>
+                          </p>
+                        )}
+                        <p className="text-[11px] text-slate-500 mt-0.5">{item.booking_date} ({item.start_time} - {item.end_time})</p>
                       </div>
                       <span className="font-extrabold text-primary">Rp {(parseInt(item.total_price) || 0).toLocaleString('id-ID')}</span>
                     </div>

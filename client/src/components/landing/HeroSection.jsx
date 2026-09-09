@@ -3,7 +3,7 @@ import BookingSearchWidget from './BookingSearchWidget';
 import { ShieldCheck, Zap, Star, Users } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-export default function HeroSection({ sports, onSearch }) {
+export default function HeroSection({ sports, outlets = [], onSearch }) {
   const { t } = useLanguage();
 
   return (
@@ -56,7 +56,7 @@ export default function HeroSection({ sports, onSearch }) {
 
           {/* Right Column: Search Widget */}
           <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <BookingSearchWidget sports={sports} onSearch={onSearch} />
+            <BookingSearchWidget sports={sports} outlets={outlets} onSearch={onSearch} />
           </div>
 
         </div>

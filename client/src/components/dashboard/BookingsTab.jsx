@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw, Printer, MessageCircle } from 'lucide-react';
+import { Search, Filter, PlusCircle, CheckCircle, XCircle, DollarSign, Calendar, Eye, Image as ImageIcon, Trash2, ShieldAlert, ChevronLeft, ChevronRight, ExternalLink, Download, FileSpreadsheet, X, Clock, RefreshCw, Printer, MessageCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 import { getWaUrl } from '../../utils/whatsapp';
 import PrintReceiptModal from './PrintReceiptModal';
 
-export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) {
+export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly, currentUser }) {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
+  const isAdmin = currentUser?.role === 'admin' || !currentUser?.outlet_id;
+  const userOutletId = currentUser?.outlet_id ? String(currentUser.outlet_id) : '';
 
   const [bookings, setBookings] = useState([]);
+  const [outlets, setOutlets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [outletFilter, setOutletFilter] = useState(userOutletId);
   const [paymentFilter, setPaymentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState(filterPaymentOnly ? 'finished' : '');
 
@@ -35,9 +39,19 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMsg, setRefreshMsg] = useState('');
 
+  useEffect(() => {
+    fetch('/api/outlets')
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) setOutlets(res.data);
+      })
+      .catch(err => console.error('Failed to load outlets in bookings tab:', err));
+  }, []);
+
   const fetchBookings = () => {
     setLoading(true);
     let url = `/api/bookings?search=${encodeURIComponent(searchTerm)}`;
+    if (outletFilter) url += `&outlet_id=${outletFilter}`;
     if (paymentFilter) url += `&payment_status=${paymentFilter}`;
     if (statusFilter) url += `&booking_status=${statusFilter}`;
 
@@ -74,7 +88,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
   useEffect(() => {
     fetchBookings();
     setCurrentPage(1);
-  }, [searchTerm, paymentFilter, statusFilter]);
+  }, [searchTerm, outletFilter, paymentFilter, statusFilter]);
 
   const handleUpdateStatus = async (id, newBookingStatus, newPaymentStatus) => {
     try {
@@ -159,6 +173,7 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
         b.items.forEach(item => {
           exportRows.push({
             booking_code: b.booking_code,
+            outlet_name: item.outlet_name || b.outlet_name || '',
             customer_name: b.customer_name,
             customer_phone: b.customer_phone,
             customer_email: b.customer_email || '',
@@ -174,12 +189,16 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
           });
         });
       } else {
-        exportRows.push(b);
+        exportRows.push({
+          ...b,
+          outlet_name: b.outlet_name || ''
+        });
       }
     });
 
     const headers = {
       booking_code: 'Kode Booking',
+      outlet_name: 'Nama Outlet',
       customer_name: 'Nama Customer',
       customer_phone: 'No Telephone',
       customer_email: 'Email',
@@ -268,6 +287,28 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Outlet Filter */}
+          {isAdmin ? (
+            <div className="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-button border border-slate-200">
+              <Building2 className="w-4 h-4 text-primary shrink-0" />
+              <select
+                value={outletFilter}
+                onChange={(e) => setOutletFilter(e.target.value)}
+                className="bg-transparent text-xs font-bold text-navy focus:outline-none cursor-pointer"
+              >
+                <option value="">{t('allOutlets')}</option>
+                {outlets.map(o => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-2 rounded-button text-xs font-bold">
+              <Building2 className="w-4 h-4 shrink-0" />
+              <span>Cabang: {currentUser?.outlet_name || 'Outlet Anda'}</span>
+            </div>
+          )}
+
           {/* Refresh Button */}
           <button
             onClick={handleRefreshBookings}
@@ -374,6 +415,12 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly }) 
                         </td>
 
                         <td className="p-4">
+                          {b.outlet_name && (
+                            <div className="text-[10px] font-bold text-primary flex items-center gap-1 mb-1">
+                              <Building2 className="w-3 h-3 shrink-0" />
+                              <span className="truncate max-w-[150px]">{b.outlet_name}</span>
+                            </div>
+                          )}
                           {b.items && b.items.length > 1 ? (
                             <div className="space-y-2">
                               <span className="inline-block px-1.5 py-0.5 rounded bg-blue-100 text-primary text-[10px] font-extrabold uppercase">

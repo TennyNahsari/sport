@@ -1,4 +1,5 @@
 import React from 'react';
+import { Building2 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function AvailabilityGrid({ courts, availabilityMap, selectedDate, onSelectSlot }) {
@@ -41,7 +42,7 @@ export default function AvailabilityGrid({ courts, availabilityMap, selectedDate
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-navy text-white font-bold border-b border-slate-700">
-                <th className="p-4 sticky left-0 bg-navy z-20 min-w-[160px] sm:min-w-[180px]">{t('tableCourtHeader')}</th>
+                <th className="p-4 sticky left-0 bg-navy z-20 min-w-[180px] sm:min-w-[210px]">{t('tableCourtHeader')}</th>
                 {hours.map((hour) => (
                   <th key={hour} className="p-3 text-center min-w-[65px] border-l border-slate-800">
                     {hour}
@@ -55,10 +56,16 @@ export default function AvailabilityGrid({ courts, availabilityMap, selectedDate
                 return (
                   <tr key={court.id} className="hover:bg-slate-50 transition-colors">
                     
-                    {/* Court Name (Sticky Left Column) */}
-                    <td className="p-4 font-extrabold text-navy sticky left-0 bg-white shadow-sm border-r border-slate-200 z-10">
-                      <div className="text-xs sm:text-sm">{court.name}</div>
-                      <div className="text-[10px] sm:text-[11px] font-normal text-slate-500">{court.sport_name}</div>
+                    {/* Court Name & Outlet (Sticky Left Column) */}
+                    <td className="p-3.5 sm:p-4 font-extrabold text-navy sticky left-0 bg-white shadow-sm border-r border-slate-200 z-10">
+                      <div className="text-xs sm:text-sm font-extrabold">{court.name}</div>
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{court.sport_name}</div>
+                      {court.outlet_name && (
+                        <div className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md mt-1.5 max-w-[190px]">
+                          <Building2 className="w-3 h-3 text-primary shrink-0" />
+                          <span className="truncate">{court.outlet_name}</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Hours Slots */}

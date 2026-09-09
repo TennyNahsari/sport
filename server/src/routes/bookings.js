@@ -43,11 +43,15 @@ router.get('/', async (req, res) => {
         AND payment_deadline < NOW()
     `);
 
-    const { date, court_id, booking_status, payment_status, search } = req.query;
+    const { date, court_id, outlet_id, booking_status, payment_status, search } = req.query;
 
     let query = `
       SELECT b.*, 
              c.name as court_name, 
+             c.outlet_id,
+             o.name as outlet_name,
+             o.address as outlet_address,
+             o.phone as outlet_phone,
              s.name as sport_name,
              s.icon as sport_icon,
              cust.name as customer_name,
@@ -55,6 +59,7 @@ router.get('/', async (req, res) => {
              cust.email as customer_email
       FROM bookings b
       JOIN courts c ON b.court_id = c.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
       JOIN sports s ON c.sport_id = s.id
       JOIN customers cust ON b.customer_id = cust.id
       WHERE 1=1
@@ -71,6 +76,11 @@ router.get('/', async (req, res) => {
       query += ` AND b.court_id = $${params.length}`;
     }
 
+    if (outlet_id) {
+      params.push(outlet_id);
+      query += ` AND c.outlet_id = $${params.length}`;
+    }
+
     if (booking_status) {
       params.push(booking_status.toLowerCase());
       query += ` AND LOWER(b.booking_status) = $${params.length}`;
@@ -84,7 +94,7 @@ router.get('/', async (req, res) => {
     if (search) {
       params.push(`%${search}%`);
       const pIdx = params.length;
-      query += ` AND (cust.name ILIKE $${pIdx} OR cust.phone ILIKE $${pIdx} OR b.booking_code ILIKE $${pIdx})`;
+      query += ` AND (cust.name ILIKE $${pIdx} OR cust.phone ILIKE $${pIdx} OR b.booking_code ILIKE $${pIdx} OR o.name ILIKE $${pIdx})`;
     }
 
     query += ' ORDER BY b.created_at DESC, b.start_time DESC';
@@ -101,6 +111,7 @@ router.get('/', async (req, res) => {
           ...row,
           items: [row],
           court_name: row.court_name,
+          outlet_name: row.outlet_name || 'All Outlets',
           total_price: parseInt(row.total_price || 0)
         });
       } else {
@@ -108,6 +119,9 @@ router.get('/', async (req, res) => {
         group.items.push(row);
         if (!group.court_name.includes(row.court_name)) {
           group.court_name += `, ${row.court_name}`;
+        }
+        if (row.outlet_name && !group.outlet_name.includes(row.outlet_name)) {
+          group.outlet_name += `, ${row.outlet_name}`;
         }
         group.total_price += parseInt(row.total_price || 0);
       }
@@ -147,12 +161,17 @@ router.get('/check/:code', async (req, res) => {
              c.name as court_name, 
              c.price_per_hour,
              c.image_url as court_image,
+             c.outlet_id,
+             o.name as outlet_name,
+             o.address as outlet_address,
+             o.phone as outlet_phone,
              s.name as sport_name,
              cust.name as customer_name,
              cust.phone as customer_phone,
              cust.email as customer_email
       FROM bookings b
       JOIN courts c ON b.court_id = c.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
       JOIN sports s ON c.sport_id = s.id
       JOIN customers cust ON b.customer_id = cust.id
       WHERE b.booking_code = $1
@@ -162,6 +181,8 @@ router.get('/check/:code', async (req, res) => {
     const items = result.rows;
     const firstItem = items[0];
     const totalGrandPrice = items.reduce((sum, item) => sum + parseInt(item.total_price || 0), 0);
+
+    const outletNames = Array.from(new Set(items.map(i => i.outlet_name).filter(Boolean))).join(', ');
 
     res.json({
       success: true,
@@ -178,11 +199,14 @@ router.get('/check/:code', async (req, res) => {
         created_at: firstItem.created_at,
         total_price: totalGrandPrice,
         items,
+        outlet_name: outletNames || firstItem.outlet_name,
+        outlet_address: firstItem.outlet_address,
+        outlet_phone: firstItem.outlet_phone,
         court_name: items.map(i => i.court_name).join(', '),
         booking_date: firstItem.booking_date,
         start_time: firstItem.start_time,
         end_time: firstItem.end_time,
-        whatsapp_number: process.env.WHATSAPP_NUMBER || '6281234567890'
+        whatsapp_number: firstItem.outlet_phone || process.env.WHATSAPP_NUMBER || '6281234567890'
       }
     });
   } catch (error) {
@@ -193,16 +217,24 @@ router.get('/check/:code', async (req, res) => {
 // GET grid calendar matrix view
 router.get('/calendar', async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, outlet_id } = req.query;
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    const courtsRes = await db.query(`
-      SELECT c.id, c.name, s.name as sport_name
+    let courtsQuery = `
+      SELECT c.id, c.name, c.outlet_id, o.name as outlet_name, s.name as sport_name
       FROM courts c
       JOIN sports s ON c.sport_id = s.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
       WHERE c.status = 'active'
-      ORDER BY s.display_order, c.id
-    `);
+    `;
+    const cParams = [];
+    if (outlet_id) {
+      cParams.push(outlet_id);
+      courtsQuery += ` AND c.outlet_id = $${cParams.length}`;
+    }
+    courtsQuery += ` ORDER BY o.id, s.display_order, c.id`;
+
+    const courtsRes = await db.query(courtsQuery, cParams);
 
     const bookingsRes = await db.query(`
       SELECT b.*, cust.name as customer_name
@@ -381,9 +413,18 @@ router.post('/', async (req, res) => {
 
     // Fetch all items belonging to this booking_code
     const allItemsRes = await db.query(`
-      SELECT b.*, c.name as court_name, s.name as sport_name, cust.name as customer_name, cust.phone as customer_phone
+      SELECT b.*, 
+             c.name as court_name, 
+             c.outlet_id,
+             o.name as outlet_name,
+             o.address as outlet_address,
+             o.phone as outlet_phone,
+             s.name as sport_name, 
+             cust.name as customer_name, 
+             cust.phone as customer_phone
       FROM bookings b
       JOIN courts c ON b.court_id = c.id
+      LEFT JOIN outlets o ON c.outlet_id = o.id
       JOIN sports s ON c.sport_id = s.id
       JOIN customers cust ON b.customer_id = cust.id
       WHERE b.booking_code = $1
@@ -393,6 +434,7 @@ router.post('/', async (req, res) => {
     const items = allItemsRes.rows;
     const firstItem = items[0];
     const totalGrandPrice = items.reduce((sum, item) => sum + parseInt(item.total_price || 0), 0);
+    const outletNames = Array.from(new Set(items.map(i => i.outlet_name).filter(Boolean))).join(', ');
 
     const message = is_merged
       ? `Booking berhasil digabungkan ke Kode Booking (${booking_code}) Anda yang belum dibayar!`
@@ -412,12 +454,15 @@ router.post('/', async (req, res) => {
         created_at: firstItem.created_at,
         total_price: totalGrandPrice,
         items,
+        outlet_name: outletNames || firstItem.outlet_name,
+        outlet_address: firstItem.outlet_address,
+        outlet_phone: firstItem.outlet_phone,
         court_name: items.map(i => i.court_name).join(', '),
         booking_date: firstItem.booking_date,
         start_time: firstItem.start_time,
         end_time: firstItem.end_time,
         is_merged,
-        whatsapp_number: process.env.WHATSAPP_NUMBER || '6281234567890'
+        whatsapp_number: firstItem.outlet_phone || process.env.WHATSAPP_NUMBER || '6281234567890'
       },
       message
     });

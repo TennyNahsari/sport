@@ -31,8 +31,9 @@ export default function PrintReceiptModal({ booking, onClose }) {
     minute: '2-digit'
   });
 
-  const venueName = (venueSettings?.qris_merchant_name || 'SPORTBOOK ARENA').toUpperCase();
-  const venuePhone = venueSettings?.whatsapp_number ? `+${venueSettings.whatsapp_number}` : '';
+  const venueName = (booking.outlet_name || venueSettings?.qris_merchant_name || 'SPORTBOOK ARENA').toUpperCase();
+  const venueAddress = booking.outlet_address || '';
+  const venuePhone = booking.outlet_phone || (venueSettings?.whatsapp_number ? `+${venueSettings.whatsapp_number}` : '');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm overflow-y-auto">
@@ -70,7 +71,11 @@ export default function PrintReceiptModal({ booking, onClose }) {
             {/* Header */}
             <div className="text-center space-y-0.5 mb-2">
               <p className="font-bold text-sm tracking-wide uppercase">{venueName}</p>
-              <p className="text-[10px] text-slate-600">{t('receiptSub')}</p>
+              {venueAddress ? (
+                <p className="text-[9px] text-slate-600 leading-tight px-2">{venueAddress}</p>
+              ) : (
+                <p className="text-[10px] text-slate-600">{t('receiptSub')}</p>
+              )}
               {venuePhone && <p className="text-[10px] font-mono">Telp/WA: {venuePhone}</p>}
             </div>
 

@@ -19,6 +19,17 @@ async function runMigrationAndSeed() {
 
     // Create tables
     await client.query(`
+      CREATE TABLE IF NOT EXISTS outlets (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        address TEXT NOT NULL,
+        phone VARCHAR(50),
+        image_url TEXT,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS sports (
         id SERIAL PRIMARY KEY,
         slug VARCHAR(100) UNIQUE NOT NULL,
@@ -31,6 +42,7 @@ async function runMigrationAndSeed() {
       CREATE TABLE IF NOT EXISTS courts (
         id SERIAL PRIMARY KEY,
         sport_id INT NOT NULL REFERENCES sports(id) ON DELETE CASCADE,
+        outlet_id INT REFERENCES outlets(id) ON DELETE SET NULL,
         name VARCHAR(150) NOT NULL,
         price_per_hour INT NOT NULL,
         image_url TEXT NOT NULL,
@@ -68,7 +80,10 @@ async function runMigrationAndSeed() {
         username VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         name VARCHAR(150) NOT NULL,
-        role VARCHAR(50) DEFAULT 'staff'
+        role VARCHAR(50) DEFAULT 'operator',
+        outlet_id INT REFERENCES outlets(id) ON DELETE SET NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS settings (
@@ -76,6 +91,11 @@ async function runMigrationAndSeed() {
         value TEXT
       );
 
+      ALTER TABLE courts ADD COLUMN IF NOT EXISTS outlet_id INT REFERENCES outlets(id) ON DELETE SET NULL;
+      ALTER TABLE courts ADD COLUMN IF NOT EXISTS created_by INT REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS outlet_id INT REFERENCES outlets(id) ON DELETE SET NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_proof TEXT;
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_deadline TIMESTAMP;
       ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
@@ -85,6 +105,25 @@ async function runMigrationAndSeed() {
     `);
 
     console.log('[PostgreSQL] Migration completed successfully.');
+
+    // Seed outlets if empty
+    const outletsRes = await client.query('SELECT COUNT(*) FROM outlets');
+    if (parseInt(outletsRes.rows[0].count) === 0) {
+      console.log('[PostgreSQL] Seeding outlets data...');
+      const outletsData = [
+        [1, 'Cilandak Sport Center', 'Jl. Cilandak KKO No. 12, Pasar Minggu, Jakarta Selatan', '081299887766', 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80', 'Kompleks olahraga terpadu di Cilandak dengan arena badminton karpet BWF, lapangan padel panoramic, dan fasilitas shower AC.', 'active'],
+        [2, 'Kemang Sport Arena', 'Jl. Kemang Raya No. 45, Mampang Prapatan, Jakarta Selatan', '081388776655', 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80', 'Pusat olahraga futsal vinyl interlock, meja tenis meja ITTF, dan area cafe di kawasan strategis Kemang.', 'active'],
+        [3, 'Senayan Sports Hub', 'Jl. Asia Afrika No. 8, Gelora, Tanah Abang, Jakarta Pusat', '081122334455', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80', 'Arena olahraga bergengsi di Senayan dengan stadion mini soccer 7v7 FIFA grade dan lapangan tenis pro hard & clay court.', 'active']
+      ];
+
+      for (const o of outletsData) {
+        await client.query(
+          'INSERT INTO outlets (id, name, address, phone, image_url, description, status) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING',
+          o
+        );
+      }
+      await client.query("SELECT setval('outlets_id_seq', (SELECT COALESCE(MAX(id), 1) FROM outlets))");
+    }
 
     // Seed sports if empty
     const sportsRes = await client.query('SELECT COUNT(*) FROM sports');
@@ -107,61 +146,64 @@ async function runMigrationAndSeed() {
       }
     }
 
+    // Seed admin and operator users first so courts can reference created_by
+    const usersRes = await client.query('SELECT COUNT(*) FROM users');
+    if (parseInt(usersRes.rows[0].count) === 0) {
+      console.log('[PostgreSQL] Seeding staff users (admin & outlet operators)...');
+      const adminPassHash = await bcrypt.hash('admin123', 10);
+      const cilandakPassHash = await bcrypt.hash('cilandak123', 10);
+      const kemangPassHash = await bcrypt.hash('kemang123', 10);
+      const senayanPassHash = await bcrypt.hash('senayan123', 10);
+      const operatorPassHash = await bcrypt.hash('operator123', 10);
+
+      await client.query('INSERT INTO users (id, username, password, name, role, outlet_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7)', [1, 'admin', adminPassHash, 'Super Admin', 'admin', null, 'active']);
+      await client.query('INSERT INTO users (id, username, password, name, role, outlet_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7)', [2, 'cilandak_staff', cilandakPassHash, 'Staff Cilandak', 'operator', 1, 'active']);
+      await client.query('INSERT INTO users (id, username, password, name, role, outlet_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7)', [3, 'kemang_staff', kemangPassHash, 'Staff Kemang', 'operator', 2, 'active']);
+      await client.query('INSERT INTO users (id, username, password, name, role, outlet_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7)', [4, 'senayan_staff', senayanPassHash, 'Staff Senayan', 'operator', 3, 'active']);
+      await client.query('INSERT INTO users (id, username, password, name, role, outlet_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7)', [5, 'operator', operatorPassHash, 'Venue Operator (Cilandak)', 'operator', 1, 'active']);
+      await client.query("SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users))");
+    } else {
+      // Ensure existing users have outlet assignment if missing
+      await client.query(`
+        UPDATE users SET outlet_id = 1 WHERE username = 'operator' AND outlet_id IS NULL;
+      `);
+    }
+
     // Seed courts if empty
     const courtsRes = await client.query('SELECT COUNT(*) FROM courts');
     if (parseInt(courtsRes.rows[0].count) === 0) {
       console.log('[PostgreSQL] Seeding courts data...');
       const courtsData = [
-        [1, 'Badminton Court 01', 80000, 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Indoor', 'AC', 'Wooden Floor', 'Standard LED']), 'active'],
-        [1, 'Badminton Court 02', 80000, 'https://images.unsplash.com/photo-1521537634581-0ddea2eed258?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Indoor', 'Rubber Mat', 'Pro Lighting']), 'active'],
-        [1, 'Badminton Court 03 (VIP)', 110000, 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80', JSON.stringify(['VIP Lounge', 'AC', 'Yonex Flooring', 'Shower']), 'active'],
-        [2, 'Padel Court Alpha', 220000, 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Panoramic Glass', 'Mondo Turf', 'Night Floodlight']), 'active'],
-        [2, 'Padel Court Beta', 200000, 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Outdoor Covered', 'Pro Turf', 'Resto Bar Access']), 'active'],
-        [3, 'Pingpong Table A1', 45000, 'https://images.unsplash.com/photo-1534158914592-062992fbe900?auto=format&fit=crop&w=800&q=80', JSON.stringify(['DHS ITTF Table', 'Air Conditioned', 'Robot Trainer Option']), 'active'],
-        [3, 'Pingpong Table A2', 45000, 'https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Butterfly Table', 'AC', 'Private Space']), 'active'],
-        [4, 'Futsal Arena 01', 180000, 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Interlock Floor', 'Digital Scoreboard', 'Sound System']), 'active'],
-        [4, 'Futsal Arena 02', 160000, 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Synthetic Grass', 'Safety Netting', 'Bleachers']), 'active'],
-        [5, 'Mini Soccer Stadium', 450000, 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80', JSON.stringify(['7v7 Pitch', 'Monofilament Turf', 'VAR Ready Camera', 'Locker Room']), 'active'],
-        [6, 'Tennis Court Center', 150000, 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Hard Court', 'Tournament Floodlight', 'Umpire Chair']), 'active'],
-        [6, 'Tennis Court Clay', 170000, 'https://images.unsplash.com/photo-1530915534664-4ac6423ca938?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Red Clay Surface', 'Shaded Seating', 'Pro Ball Machine']), 'active']
+        [1, 1, 1, 'Badminton Court 01', 80000, 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Indoor', 'AC', 'Wooden Floor', 'Standard LED']), 'active', 1],
+        [2, 1, 1, 'Badminton Court 02', 80000, 'https://images.unsplash.com/photo-1521537634581-0ddea2eed258?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Indoor', 'Rubber Mat', 'Pro Lighting']), 'active', 1],
+        [3, 1, 1, 'Badminton Court 03 (VIP)', 110000, 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80', JSON.stringify(['VIP Lounge', 'AC', 'Yonex Flooring', 'Shower']), 'active', 1],
+        [4, 2, 1, 'Padel Court Alpha', 220000, 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Panoramic Glass', 'Mondo Turf', 'Night Floodlight']), 'active', 1],
+        [5, 2, 1, 'Padel Court Beta', 200000, 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Outdoor Covered', 'Pro Turf', 'Resto Bar Access']), 'active', 1],
+        [6, 3, 2, 'Pingpong Table A1', 45000, 'https://images.unsplash.com/photo-1534158914592-062992fbe900?auto=format&fit=crop&w=800&q=80', JSON.stringify(['DHS ITTF Table', 'Air Conditioned', 'Robot Trainer Option']), 'active', 1],
+        [7, 3, 2, 'Pingpong Table A2', 45000, 'https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Butterfly Table', 'AC', 'Private Space']), 'active', 1],
+        [8, 4, 2, 'Futsal Arena 01', 180000, 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Interlock Floor', 'Digital Scoreboard', 'Sound System']), 'active', 1],
+        [9, 4, 2, 'Futsal Arena 02', 160000, 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Synthetic Grass', 'Safety Netting', 'Bleachers']), 'active', 1],
+        [10, 5, 3, 'Mini Soccer Stadium', 450000, 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80', JSON.stringify(['7v7 Pitch', 'Monofilament Turf', 'VAR Ready Camera', 'Locker Room']), 'active', 1],
+        [11, 6, 3, 'Tennis Court Center', 150000, 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Hard Court', 'Tournament Floodlight', 'Umpire Chair']), 'active', 1],
+        [12, 6, 3, 'Tennis Court Clay', 170000, 'https://images.unsplash.com/photo-1530915534664-4ac6423ca938?auto=format&fit=crop&w=800&q=80', JSON.stringify(['Red Clay Surface', 'Shaded Seating', 'Pro Ball Machine']), 'active', 1]
       ];
 
       for (const c of courtsData) {
         await client.query(
-          'INSERT INTO courts (sport_id, name, price_per_hour, image_url, facilities, status) VALUES ($1, $2, $3, $4, $5, $6)',
+          'INSERT INTO courts (id, sport_id, outlet_id, name, price_per_hour, image_url, facilities, status, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO NOTHING',
           c
         );
       }
-    }
-
-    // Seed bookings if empty
-    const bookingsRes = await client.query('SELECT COUNT(*) FROM bookings');
-    if (parseInt(bookingsRes.rows[0].count) === 0) {
-      console.log('[PostgreSQL] Seeding initial customer & booking records...');
-      const cust1 = await client.query('INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING id', ['Budi Santoso', '081234567890', 'budi@gmail.com']);
-      const cust2 = await client.query('INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING id', ['Siti Rahma', '081987654321', 'siti@yahoo.com']);
-      const cust3 = await client.query('INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING id', ['Rian Pratama', '085711223344', 'rian@outlook.com']);
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      const ymSeed = todayStr.replace(/-/g, '').substring(0, 6);
-
+      await client.query("SELECT setval('courts_id_seq', (SELECT COALESCE(MAX(id), 1) FROM courts))");
+    } else {
+      // Ensure existing courts have outlet_id and created_by assigned if null
       await client.query(`
-        INSERT INTO bookings (booking_code, court_id, customer_id, booking_date, start_time, end_time, duration_hours, total_price, payment_status, booking_status, payment_deadline)
-        VALUES 
-        ('SB-' || $4 || '-1001', 1, $1, $5, '19:00', '21:00', 2, 160000, 'paid', 'paid', CURRENT_TIMESTAMP + INTERVAL '1 hour'),
-        ('SB-' || $4 || '-1002', 2, $2, $5, '18:00', '19:00', 1, 80000, 'paid', 'paid', CURRENT_TIMESTAMP + INTERVAL '1 hour'),
-        ('SB-' || $4 || '-1003', 4, $3, $5, '20:00', '22:00', 2, 440000, 'unpaid', 'unpaid', CURRENT_TIMESTAMP + INTERVAL '1 hour')
-      `, [cust1.rows[0].id, cust2.rows[0].id, cust3.rows[0].id, ymSeed, todayStr]);
-    }
-
-    // Seed admin and operator users
-    const usersRes = await client.query('SELECT COUNT(*) FROM users');
-    if (parseInt(usersRes.rows[0].count) === 0) {
-      console.log('[PostgreSQL] Seeding staff users (admin & operator)...');
-      const adminPassHash = await bcrypt.hash('admin123', 10);
-      const operatorPassHash = await bcrypt.hash('op123', 10);
-      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['admin', adminPassHash, 'Super Admin', 'admin']);
-      await client.query('INSERT INTO users (username, password, name, role) VALUES ($1, $2, $3, $4)', ['operator', operatorPassHash, 'Venue Operator', 'operator']);
+        UPDATE courts SET outlet_id = 1 WHERE outlet_id IS NULL AND id IN (1, 2, 3, 4, 5);
+        UPDATE courts SET outlet_id = 2 WHERE outlet_id IS NULL AND id IN (6, 7, 8, 9);
+        UPDATE courts SET outlet_id = 3 WHERE outlet_id IS NULL AND id IN (10, 11, 12);
+        UPDATE courts SET outlet_id = 1 WHERE outlet_id IS NULL;
+        UPDATE courts SET created_by = 1 WHERE created_by IS NULL;
+      `);
     }
 
     // Seed default settings if empty

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Building2 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function CourtCard({ court, slots, selectedDate, onSelectSlot, onBookCourt }) {
@@ -24,8 +24,16 @@ export default function CourtCard({ court, slots, selectedDate, onSelectSlot, on
             alt={court.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute top-3 left-3 bg-navy/85 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            {court.sport_name}
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+            <div className="bg-navy/85 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              {court.sport_name}
+            </div>
+            {court.outlet_name && (
+              <div className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-sm">
+                <Building2 className="w-3 h-3" />
+                <span className="truncate max-w-[140px]">{court.outlet_name}</span>
+              </div>
+            )}
           </div>
           
           <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md text-navy text-xs font-extrabold px-3 py-1 rounded-full shadow-md">
@@ -35,12 +43,21 @@ export default function CourtCard({ court, slots, selectedDate, onSelectSlot, on
 
         {/* Card Body */}
         <div className="p-5">
-          <h3 className="text-xl font-extrabold text-navy group-hover:text-primary transition-colors">
-            {court.name}
-          </h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-xl font-extrabold text-navy group-hover:text-primary transition-colors">
+              {court.name}
+            </h3>
+          </div>
+
+          {court.outlet_name && (
+            <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-semibold">
+              <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span>{court.outlet_name}</span>
+            </p>
+          )}
 
           {/* Facilities Pills */}
-          <div className="flex flex-wrap gap-1.5 mt-3 mb-4">
+          <div className="flex flex-wrap gap-1.5 mt-2.5 mb-4">
             {court.facilities && court.facilities.map((fac, idx) => (
               <span key={idx} className="bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-slate-200">
                 {fac}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink, QrCode, Copy, Clock } from 'lucide-react';
+import { X, Search, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, Upload, Send, MessageSquare, ExternalLink, QrCode, Copy, Clock, Building2, Check } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function CheckBookingModal({ onClose }) {
@@ -8,6 +8,7 @@ export default function CheckBookingModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const [venueSettings, setVenueSettings] = useState({
     bank_name: 'BCA',
@@ -170,7 +171,21 @@ export default function CheckBookingModal({ onClose }) {
               <div className="bg-slate-50 p-3.5 rounded-card border border-slate-200 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500 font-semibold">{t('bookingCodeLabel')}</span>
-                  <span className="font-mono font-extrabold text-primary text-base">{bookingData.booking_code}</span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="font-mono font-extrabold text-primary text-base">{bookingData.booking_code}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(bookingData.booking_code);
+                        setCopiedCode(true);
+                        setTimeout(() => setCopiedCode(false), 2000);
+                      }}
+                      className="p-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
+                      title="Salin Kode Booking"
+                    >
+                      {copiedCode ? <Check className="w-3.5 h-3.5 text-sportgreen" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -234,8 +249,17 @@ export default function CheckBookingModal({ onClose }) {
                   {(bookingData.items && bookingData.items.length > 0 ? bookingData.items : [bookingData]).map((item, idx) => (
                     <div key={idx} className="bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center text-xs">
                       <div>
-                        <p className="font-extrabold text-navy">{item.court_name} <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span></p>
-                        <p className="text-[11px] text-slate-500">{item.booking_date} ({item.start_time} - {item.end_time})</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-extrabold text-navy">{item.court_name}</p>
+                          <span className="text-slate-500 text-[10px]">({item.sport_name || 'Sport'})</span>
+                        </div>
+                        {(item.outlet_name || bookingData.outlet_name) && (
+                          <p className="text-[10px] text-primary font-bold flex items-center gap-1 mt-0.5">
+                            <Building2 className="w-3 h-3" />
+                            <span>{item.outlet_name || bookingData.outlet_name}</span>
+                          </p>
+                        )}
+                        <p className="text-[11px] text-slate-500 mt-0.5">{item.booking_date} ({item.start_time} - {item.end_time})</p>
                       </div>
                       <span className="font-extrabold text-primary">Rp {(parseInt(item.total_price) || 0).toLocaleString('id-ID')}</span>
                     </div>
