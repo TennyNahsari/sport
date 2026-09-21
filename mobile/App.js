@@ -12,7 +12,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('landing'); // 'landing' | 'check_order' | 'login' | 'dashboard'
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Load persistent user session
+  // Load persistent user session if exists
   useEffect(() => {
     const checkUserSession = async () => {
       try {
@@ -27,18 +27,24 @@ export default function App() {
     checkUserSession();
   }, []);
 
-  const handleLoginSuccess = (user) => {
+  const handleLoginSuccess = async (user) => {
     setCurrentUser(user);
+    try {
+      await AsyncStorage.setItem('sportbook_user', JSON.stringify(user));
+    } catch (err) {
+      console.error('Failed to persist user session:', err);
+    }
     setActiveTab('dashboard');
   };
 
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('sportbook_user');
-      setCurrentUser(null);
-      setActiveTab('landing');
     } catch (err) {
       console.error('Error logging out:', err);
+    } finally {
+      setCurrentUser(null);
+      setActiveTab('login');
     }
   };
 
@@ -54,14 +60,17 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.navy} />
 
-      {/* Top Header */}
+      {/* Top Header Bar with Brand and User / Logout Status */}
       <HeaderBar
         title="SportBook"
         activeTab={activeTab}
         currentUser={currentUser}
+        onLogout={handleLogout}
         onTabChange={(tab) => {
           if (tab === 'login' && currentUser) {
             setActiveTab('dashboard');
+          } else if (tab === 'dashboard' && !currentUser) {
+            setActiveTab('login');
           } else {
             setActiveTab(tab);
           }

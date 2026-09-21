@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Image,
   Linking
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../constants/theme';
@@ -23,6 +24,18 @@ export default function BookingsTab({ currentUser }) {
 
   // Status Change Modal State
   const [selectedBooking, setSelectedBooking] = useState(null);
+
+  // Image Preview Modal State
+  const [previewProofUrl, setPreviewProofUrl] = useState(null);
+
+  const getFullProofUrl = (proofPath) => {
+    if (!proofPath || typeof proofPath !== 'string' || !proofPath.trim()) return '';
+    if (proofPath.startsWith('http://') || proofPath.startsWith('https://') || proofPath.startsWith('data:image')) {
+      return proofPath;
+    }
+    const baseUrl = getApiUrl().replace(/\/api\/?$/, '');
+    return `${baseUrl}${proofPath.startsWith('/') ? '' : '/'}${proofPath}`;
+  };
 
   const loadBookings = async () => {
     setLoading(true);
@@ -43,7 +56,6 @@ export default function BookingsTab({ currentUser }) {
       }
     } catch (err) {
       console.error('Failed to load bookings:', err);
-      // Fallback demo bookings list
       setBookings([
         {
           id: 1,
@@ -57,7 +69,8 @@ export default function BookingsTab({ currentUser }) {
           end_time: '21:00',
           total_price: 160000,
           payment_status: 'paid',
-          booking_status: 'paid'
+          booking_status: 'paid',
+          payment_proof: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80'
         },
         {
           id: 2,
@@ -193,6 +206,8 @@ export default function BookingsTab({ currentUser }) {
         <ScrollView showsVerticalScrollIndicator={false}>
           {bookings.map((booking) => {
             const badge = getStatusBadge(booking.payment_status || booking.booking_status);
+            const proofUrl = getFullProofUrl(booking.payment_proof);
+            const hasProof = Boolean(proofUrl);
 
             return (
               <View key={booking.id} style={styles.bookingCard}>
@@ -227,6 +242,22 @@ export default function BookingsTab({ currentUser }) {
                   <Text style={styles.detailLabel}>Waktu Main:</Text>
                   <Text style={styles.detailVal}>{booking.start_time} - {booking.end_time || ''}</Text>
                 </View>
+
+                {/* Proof of Payment Thumbnail Badge */}
+                {hasProof ? (
+                  <TouchableOpacity
+                    style={styles.proofBadgeBtn}
+                    onPress={() => setPreviewProofUrl(proofUrl)}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={{ uri: proofUrl }} style={styles.proofMiniThumb} resizeMode="cover" />
+                    <Text style={styles.proofBadgeText}>🖼️ Lihat Struk Bukti Transfer</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.noProofBadge}>
+                    <Text style={styles.noProofText}>⚠️ Bukti Transfer Belum Diunggah</Text>
+                  </View>
+                )}
 
                 <View style={styles.divider} />
 
@@ -271,9 +302,31 @@ export default function BookingsTab({ currentUser }) {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.modalBody}>
+              <ScrollView style={styles.modalBody}>
                 <Text style={styles.modalCodeText}>{selectedBooking.booking_code}</Text>
                 <Text style={styles.modalSub}>{selectedBooking.customer_name} • {selectedBooking.court_name}</Text>
+
+                {/* Show Proof Image if available */}
+                {selectedBooking.payment_proof ? (
+                  <View style={styles.modalProofCard}>
+                    <Text style={styles.modalProofTitle}>📸 Struk Bukti Transfer Pelanggan:</Text>
+                    <TouchableOpacity
+                      onPress={() => setPreviewProofUrl(getFullProofUrl(selectedBooking.payment_proof))}
+                      activeOpacity={0.9}
+                    >
+                      <Image
+                        source={{ uri: getFullProofUrl(selectedBooking.payment_proof) }}
+                        style={styles.modalProofImg}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.zoomTipText}>🔍 Ketuk foto untuk memperbesar</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.noProofModalCard}>
+                    <Text style={styles.noProofModalText}>⚠️ Pelanggan belum mengunggah bukti transfer.</Text>
+                  </View>
+                )}
 
                 <Text style={styles.statusLabel}>UBAH STATUS PEMBAYARAN & REAKSI:</Text>
                 <View style={styles.statusGrid}>
@@ -305,6 +358,29 @@ export default function BookingsTab({ currentUser }) {
                 >
                   <Text style={styles.deleteBookingText}>🗑️ Hapus Permanen Booking Ini</Text>
                 </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Full-size Proof Preview Modal */}
+      {previewProofUrl && (
+        <Modal transparent animationType="fade" visible={true} onRequestClose={() => setPreviewProofUrl(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCardBig}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Struk Bukti Transfer Pelanggan</Text>
+                <TouchableOpacity onPress={() => setPreviewProofUrl(null)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.fullProofBox}>
+                <Image
+                  source={{ uri: previewProofUrl }}
+                  style={styles.fullProofImg}
+                  resizeMode="contain"
+                />
               </View>
             </View>
           </View>
@@ -472,10 +548,49 @@ const styles = StyleSheet.create({
     color: COLORS.navy,
     fontWeight: '800',
   },
+  proofBadgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryBg,
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  proofMiniThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    marginRight: 6,
+    backgroundColor: COLORS.white,
+  },
+  proofBadgeText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  noProofBadge: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  noProofText: {
+    color: COLORS.textSlate,
+    fontSize: 10,
+    fontWeight: '700',
+  },
   divider: {
     height: 1,
     backgroundColor: COLORS.border,
-    marginVertical: 8,
+    marginVertical: 10,
   },
   priceRow: {
     flexDirection: 'row',
@@ -524,13 +639,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
     justifyContent: 'center',
     padding: 20,
   },
   modalCard: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 16,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
+  modalCardBig: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '90%',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -564,7 +687,49 @@ const styles = StyleSheet.create({
     color: COLORS.textSlate,
     textAlign: 'center',
     marginTop: 2,
+    marginBottom: 12,
+  },
+  modalProofCard: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 14,
+    alignItems: 'center',
+  },
+  modalProofTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: COLORS.navy,
+    marginBottom: 8,
+  },
+  modalProofImg: {
+    width: 220,
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: COLORS.white,
+  },
+  zoomTipText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  noProofModalCard: {
+    backgroundColor: COLORS.surface,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 14,
+    alignItems: 'center',
+  },
+  noProofModalText: {
+    fontSize: 10,
+    color: COLORS.textSlate,
+    fontWeight: '700',
   },
   statusLabel: {
     fontSize: 10,
@@ -587,10 +752,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 10,
   },
   deleteBookingText: {
     color: COLORS.danger,
     fontSize: 11,
     fontWeight: '800',
+  },
+  fullProofBox: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullProofImg: {
+    width: '100%',
+    height: 380,
   }
 });

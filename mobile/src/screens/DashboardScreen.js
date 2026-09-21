@@ -92,7 +92,12 @@ export default function DashboardScreen({ currentUser, onLogout, onSwitchToCusto
       </View>
 
       {/* Scrollable Sub Navigation Bar for Dashboard Modules */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subNavScroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.subNavScroll}
+        contentContainerStyle={styles.subNavContentStyle}
+      >
         {[
           { id: 'overview', label: '📊 Ringkasan' },
           { id: 'calendar', label: '🗓️ Kalender' },
@@ -402,6 +407,12 @@ const styles = StyleSheet.create({
   },
   subNavScroll: {
     marginBottom: 14,
+    flexGrow: 0,
+    height: 42,
+  },
+  subNavContentStyle: {
+    alignItems: 'center',
+    paddingVertical: 2,
   },
   subNavTab: {
     paddingHorizontal: 14,
@@ -410,7 +421,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: 6,
+    marginRight: 8,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subNavTabActive: {
     backgroundColor: COLORS.navy,

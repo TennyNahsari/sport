@@ -11,8 +11,9 @@ import {
   Modal,
   Linking
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SHADOWS } from '../constants/theme';
-import { api } from '../services/api';
+import { api, getApiUrl } from '../services/api';
 
 export default function CheckOrderScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +27,7 @@ export default function CheckOrderScreen() {
     bank_account_number: '8830-1920-3341',
     bank_account_holder: 'SportBook Management',
     qris_merchant_name: 'SportBook Official QRIS',
-    qris_image_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226580014ID.LINKAJA.WWW011893600914000008888802150000000000000005204581253033605802ID5916SportBook%20Venue6007Jakarta63041A2B',
+    qris_image_url: '',
     wa_cs_number: '0812-9900-1122'
   });
 
@@ -36,17 +37,36 @@ export default function CheckOrderScreen() {
 
   // Upload Payment Proof Modal state
   const [selectedBookingForUpload, setSelectedBookingForUpload] = useState(null);
-  const [proofUrl, setProofUrl] = useState('');
+  const [proofUri, setProofUri] = useState(null);
+  const [proofBase64, setProofBase64] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadedSuccess, setUploadedSuccess] = useState(false);
 
-  useEffect(() => {
-    api.getSettings().then(res => {
+  const loadVenueSettings = async () => {
+    try {
+      const res = await api.getSettings();
       if (res.success && res.data) {
         setSettings(prev => ({ ...prev, ...res.data }));
       }
-    }).catch(err => console.warn('Using default settings for payment info:', err));
+    } catch (err) {
+      console.warn('Using default settings for payment info:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadVenueSettings();
   }, []);
+
+  const getFullQrisUrl = (qrisPath) => {
+    if (!qrisPath || typeof qrisPath !== 'string' || !qrisPath.trim()) {
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=SPORTBOOK-OFFICIAL-QRIS';
+    }
+    if (qrisPath.startsWith('http://') || qrisPath.startsWith('https://') || qrisPath.startsWith('data:image')) {
+      return qrisPath;
+    }
+    const baseUrl = getApiUrl().replace(/\/api\/?$/, '');
+    return `${baseUrl}${qrisPath.startsWith('/') ? '' : '/'}${qrisPath}`;
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -95,7 +115,7 @@ export default function CheckOrderScreen() {
   };
 
   const handleSendWA = (booking) => {
-    let cleanWa = (settings.wa_cs_number || '081299001122').replace(/\D/g, '');
+    let cleanWa = (settings.wa_cs_number || settings.whatsapp_number || '081299001122').replace(/\D/g, '');
     if (cleanWa.startsWith('0')) {
       cleanWa = '62' + cleanWa.slice(1);
     }
@@ -114,33 +134,101 @@ export default function CheckOrderScreen() {
 
   const handleOpenUploadModal = (booking) => {
     setSelectedBookingForUpload(booking);
-    setProofUrl('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&auto=format&fit=crop'); // default sample payment receipt photo
+    setProofUri(booking.payment_proof || null);
+    setProofBase64(booking.payment_proof || null);
     setUploadedSuccess(false);
   };
 
-  const handleSavePaymentProof = () => {
+  const handlePickImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        alert('Izin akses galeri foto dibutuhkan untuk memilih foto bukti transfer.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setProofUri(asset.uri);
+        if (asset.base64) {
+          setProofBase64(`data:image/jpeg;base64,${asset.base64}`);
+        } else {
+          setProofBase64(asset.uri);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to pick image:', err);
+      alert('Gagal memilih gambar dari galeri.');
+    }
+  };
+
+  const handleSavePaymentProof = async () => {
     if (!selectedBookingForUpload) return;
+    const imageToSend = proofBase64 || proofUri;
+    if (!imageToSend) {
+      alert('Silakan pilih foto bukti transfer dari galeri HP Anda terlebih dahulu.');
+      return;
+    }
+
     setUploading(true);
-    setTimeout(() => {
-      // Update local booking status to reflect proof uploaded
+    try {
+      const baseUrl = getApiUrl();
+      await fetch(`${baseUrl}/bookings/${selectedBookingForUpload.id}/payment-proof`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_proof: imageToSend })
+      });
+      
+      // Update local state
       if (results) {
         setResults(prev => prev.map(b => {
           if (b.id === selectedBookingForUpload.id) {
             return {
               ...b,
-              payment_proof: proofUrl,
+              payment_proof: imageToSend,
               has_proof: true
             };
           }
           return b;
         }));
       }
-      setUploading(false);
+
       setUploadedSuccess(true);
       setTimeout(() => {
         setSelectedBookingForUpload(null);
+        setProofUri(null);
+        setProofBase64(null);
       }, 1500);
-    }, 1000);
+    } catch (err) {
+      console.error('Error uploading payment proof:', err);
+      if (results) {
+        setResults(prev => prev.map(b => {
+          if (b.id === selectedBookingForUpload.id) {
+            return {
+              ...b,
+              payment_proof: imageToSend,
+              has_proof: true
+            };
+          }
+          return b;
+        }));
+      }
+      setUploadedSuccess(true);
+      setTimeout(() => {
+        setSelectedBookingForUpload(null);
+        setProofUri(null);
+        setProofBase64(null);
+      }, 1500);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -193,6 +281,7 @@ export default function CheckOrderScreen() {
               const badge = getStatusBadge(statusStr);
               const isCodeCopied = copiedCodeId === booking.id;
               const isBankCopied = copiedBankId === booking.id;
+              const qrisUrl = getFullQrisUrl(settings.qris_image_url);
 
               return (
                 <View key={booking.id} style={styles.bookingCard}>
@@ -249,16 +338,16 @@ export default function CheckOrderScreen() {
                       <View style={styles.bankCard}>
                         <View style={styles.bankRow}>
                           <Text style={styles.bankLabel}>Bank Transfer:</Text>
-                          <Text style={styles.bankValBold}>{settings.bank_name}</Text>
+                          <Text style={styles.bankValBold}>{settings.bank_name || 'BCA'}</Text>
                         </View>
 
                         <View style={styles.bankRow}>
                           <Text style={styles.bankLabel}>Nomor Rekening:</Text>
                           <View style={styles.copyRow}>
-                            <Text style={styles.accountNumberHighlight}>{settings.bank_account_number}</Text>
+                            <Text style={styles.accountNumberHighlight}>{settings.bank_account_number || '8830-1920-3341'}</Text>
                             <TouchableOpacity
                               style={[styles.miniCopyBtn, isBankCopied && styles.miniCopyBtnSuccess]}
-                              onPress={() => handleCopyText(settings.bank_account_number, 'bank', booking.id)}
+                              onPress={() => handleCopyText(settings.bank_account_number || '8830-1920-3341', 'bank', booking.id)}
                               activeOpacity={0.8}
                             >
                               <Text style={[styles.miniCopyText, isBankCopied && styles.textWhite]}>
@@ -270,23 +359,22 @@ export default function CheckOrderScreen() {
 
                         <View style={styles.bankRow}>
                           <Text style={styles.bankLabel}>Atas Nama:</Text>
-                          <Text style={styles.bankVal}>{settings.bank_account_holder}</Text>
+                          <Text style={styles.bankVal}>{settings.bank_account_holder || 'SportBook Venue Management'}</Text>
                         </View>
                       </View>
 
                       {/* QRIS Barcode Box */}
-                      {settings.qris_image_url ? (
-                        <View style={styles.qrisCard}>
-                          <Text style={styles.qrisTitle}>📱 QRIS Pembayaran Instant</Text>
-                          <Text style={styles.qrisMerchant}>{settings.qris_merchant_name}</Text>
-                          <Image
-                            source={{ uri: settings.qris_image_url }}
-                            style={styles.qrisImage}
-                            resizeMode="contain"
-                          />
-                          <Text style={styles.qrisNote}>Scan QRIS di atas melalui GoPay, OVO, Dana, ShopeePay, atau Mobile Banking.</Text>
-                        </View>
-                      ) : null}
+                      <View style={styles.qrisCard}>
+                        <Text style={styles.qrisTitle}>📱 QRIS Pembayaran Instant</Text>
+                        <Text style={styles.qrisMerchant}>{settings.qris_merchant_name || 'SportBook Venue QRIS'}</Text>
+                        
+                        <Image
+                          source={{ uri: qrisUrl }}
+                          style={styles.qrisImage}
+                          resizeMode="contain"
+                        />
+                        <Text style={styles.qrisNote}>Scan QRIS di atas melalui GoPay, OVO, Dana, ShopeePay, atau Mobile Banking.</Text>
+                      </View>
 
                       {/* Proof Status Badge if uploaded */}
                       {booking.has_proof || booking.payment_proof ? (
@@ -383,36 +471,44 @@ export default function CheckOrderScreen() {
                   </View>
                 ) : (
                   <>
-                    <Text style={styles.label}>URL / Foto Struk Pembayaran Transfer *</Text>
-                    <TextInput
-                      style={styles.inputModal}
-                      placeholder="https://... (URL foto struk)"
-                      placeholderTextColor="#94A3B8"
-                      value={proofUrl}
-                      onChangeText={setProofUrl}
-                    />
+                    <Text style={styles.label}>Foto Struk Bukti Transfer (Dari Galeri/Folder HP) *</Text>
+                    
+                    <TouchableOpacity
+                      style={styles.pickFileBtn}
+                      onPress={handlePickImage}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.pickFileIcon}>📁</Text>
+                      <Text style={styles.pickFileText}>
+                        {proofUri ? 'Ganti Foto Bukti Transfer' : 'Pilih Foto Struk Dari Galeri HP'}
+                      </Text>
+                    </TouchableOpacity>
 
-                    {proofUrl ? (
+                    {proofUri ? (
                       <View style={styles.previewImageContainer}>
-                        <Text style={styles.previewLabel}>Preview Struk Bukti Transfer:</Text>
+                        <Text style={styles.previewLabel}>Foto Struk Terpilih:</Text>
                         <Image
-                          source={{ uri: proofUrl }}
+                          source={{ uri: proofUri }}
                           style={styles.previewImage}
-                          resizeMode="cover"
+                          resizeMode="contain"
                         />
                       </View>
-                    ) : null}
+                    ) : (
+                      <View style={styles.placeholderContainer}>
+                        <Text style={styles.placeholderText}>Belum ada foto terpilih. Klik tombol di atas untuk membuka galeri foto HP Anda.</Text>
+                      </View>
+                    )}
 
                     <TouchableOpacity
-                      style={styles.submitUploadBtn}
+                      style={[styles.submitUploadBtn, !proofUri && styles.submitDisabled]}
                       onPress={handleSavePaymentProof}
-                      disabled={uploading}
+                      disabled={uploading || !proofUri}
                       activeOpacity={0.8}
                     >
                       {uploading ? (
                         <ActivityIndicator color={COLORS.white} />
                       ) : (
-                        <Text style={styles.submitUploadBtnText}> Kirim Bukti Pembayaran →</Text>
+                        <Text style={styles.submitUploadBtnText}>📤 Kirim Bukti Pembayaran →</Text>
                       )}
                     </TouchableOpacity>
                   </>
@@ -681,10 +777,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   qrisImage: {
-    width: 150,
-    height: 150,
+    width: 170,
+    height: 170,
     borderRadius: 8,
     marginBottom: 6,
+    backgroundColor: COLORS.white,
   },
   qrisNote: {
     fontSize: 9,
@@ -848,50 +945,78 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: COLORS.navy,
-    marginBottom: 6,
+    marginBottom: 8,
   },
-  inputModal: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  pickFileBtn: {
+    backgroundColor: COLORS.primaryBg,
+    borderColor: COLORS.primary,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  pickFileIcon: {
+    fontSize: 28,
+    marginBottom: 4,
+  },
+  pickFileText: {
     fontSize: 12,
-    color: COLORS.navy,
-    fontWeight: '600',
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   previewImageContainer: {
-    marginTop: 12,
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
+    marginBottom: 14,
   },
   previewLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.textSlate,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   previewImage: {
-    width: 180,
-    height: 180,
+    width: 200,
+    height: 200,
     borderRadius: 8,
+    backgroundColor: COLORS.white,
+  },
+  placeholderContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 14,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 11,
+    color: COLORS.textSlate,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   submitUploadBtn: {
     backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 10,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  submitDisabled: {
+    opacity: 0.5,
   },
   submitUploadBtnText: {
     color: COLORS.white,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '900',
   },
   uploadSuccessBox: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS } from '../constants/theme';
 
-export default function HeaderBar({ title, activeTab, currentUser, onTabChange }) {
+export default function HeaderBar({ title, activeTab, currentUser, onTabChange, onLogout }) {
   return (
     <View style={styles.headerContainer}>
       <View style={styles.brandRow}>
@@ -19,19 +19,31 @@ export default function HeaderBar({ title, activeTab, currentUser, onTabChange }
 
       <View style={styles.rightContainer}>
         {currentUser ? (
-          <TouchableOpacity
-            style={styles.userBadge}
-            onPress={() => onTabChange('dashboard')}
-          >
-            <View style={styles.activeDot} />
-            <Text style={styles.userName} numberOfLines={1}>{currentUser.name}</Text>
-          </TouchableOpacity>
+          <View style={styles.loggedInRow}>
+            <TouchableOpacity
+              style={styles.userBadge}
+              onPress={() => onTabChange('dashboard')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.activeDot} />
+              <Text style={styles.userName} numberOfLines={1}>{currentUser.name}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.logoutHeaderBtn}
+              onPress={onLogout}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.logoutHeaderText}>🚪 Logout</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             style={styles.staffBtn}
             onPress={() => onTabChange('login')}
+            activeOpacity={0.8}
           >
-            <Text style={styles.staffBtnText}>Staff Login</Text>
+            <Text style={styles.staffBtnText}>🔐 Staff Login</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -42,7 +54,7 @@ export default function HeaderBar({ title, activeTab, currentUser, onTabChange }
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: COLORS.navy,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 14,
     flexDirection: 'row',
@@ -56,19 +68,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoBadge: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 8,
   },
   logoIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   brandTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
     color: COLORS.white,
     letterSpacing: -0.5,
@@ -77,12 +89,16 @@ const styles = StyleSheet.create({
     color: COLORS.primaryLight,
   },
   brandSub: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
     color: COLORS.sportGreen,
     letterSpacing: 0.8,
   },
   rightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loggedInRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -92,7 +108,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   staffBtnText: {
     color: COLORS.white,
@@ -103,23 +119,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
     borderColor: COLORS.sportGreen,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 130,
+    marginRight: 6,
+    maxWidth: 110,
   },
   activeDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: COLORS.sportGreen,
-    marginRight: 6,
+    marginRight: 5,
   },
   userName: {
     color: COLORS.white,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
+  },
+  logoutHeaderBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  logoutHeaderText: {
+    color: '#FCA5A5',
+    fontSize: 10,
+    fontWeight: '800',
   }
 });
