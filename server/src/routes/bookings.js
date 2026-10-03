@@ -499,10 +499,11 @@ router.put('/:id/payment-proof', async (req, res) => {
       UPDATE bookings
       SET payment_proof = $1
       WHERE booking_code = $2
-    `, [bookingCode]);
+    `, [payment_proof, bookingCode]);
 
     const updatedRes = await db.query('SELECT * FROM bookings WHERE booking_code = $1', [bookingCode]);
     res.json({
+      success: true,
       data: updatedRes.rows[0],
       message: 'Bukti transfer berhasil terunggah! Staff akan segera melakukan verifikasi.'
     });

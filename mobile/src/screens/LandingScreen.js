@@ -15,6 +15,7 @@ import SportFilter from '../components/SportFilter';
 import CourtCard from '../components/CourtCard';
 import SlotGrid from '../components/SlotGrid';
 import BookingModal from '../components/BookingModal';
+import Pagination from '../components/Pagination';
 
 export default function LandingScreen({ onOpenCheckOrder }) {
   const todayStr = new Date().toISOString().split('T')[0];
@@ -26,6 +27,11 @@ export default function LandingScreen({ onOpenCheckOrder }) {
   const [selectedOutletId, setSelectedOutletId] = useState('');
   const [selectedSportId, setSelectedSportId] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  const totalPages = Math.ceil(courts.length / itemsPerPage) || 1;
+  const paginatedCourts = courts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [refreshing, setRefreshing] = useState(false);
@@ -164,13 +170,23 @@ export default function LandingScreen({ onOpenCheckOrder }) {
                   <Text style={styles.emptyText}>Tidak ada lapangan ditemukan untuk filter ini.</Text>
                 </View>
               ) : (
-                courts.map((court) => (
-                  <CourtCard
-                    key={court.id}
-                    court={court}
-                    onBook={handleBookCourtDirect}
+                <>
+                  {paginatedCourts.map((court) => (
+                    <CourtCard
+                      key={court.id}
+                      court={court}
+                      onBook={handleBookCourtDirect}
+                    />
+                  ))}
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={courts.length}
+                    itemsPerPage={itemsPerPage}
+                    label="lapangan"
                   />
-                ))
+                </>
               )}
             </View>
 

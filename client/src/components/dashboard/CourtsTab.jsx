@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlusCircle, Edit3, Trash2, ShieldAlert, CheckCircle, XCircle, FileSpreadsheet, Download, Building2, MapPin, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
+import Pagination from '../common/Pagination';
 
 export default function CourtsTab({ currentUser }) {
   const { t } = useLanguage();
@@ -415,50 +416,15 @@ export default function CourtsTab({ currentUser }) {
           </div>
 
           {/* Pagination Navigation Footer */}
-          {totalPages > 1 && (
-            <div className="bg-white p-4 rounded-card border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="text-slate-500 font-semibold">
-                Menampilkan <span className="text-navy font-bold">{startIndex + 1}</span> - <span className="text-navy font-bold">{Math.min(startIndex + itemsPerPage, filteredCourts.length)}</span> dari <span className="text-navy font-bold">{filteredCourts.length}</span> lapangan
-              </div>
-
-              <div className="flex items-center space-x-1.5">
-                <button
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  className="p-1.5 rounded-button border border-slate-200 hover:bg-slate-100 text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Previous Page"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    type="button"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-button text-xs font-bold transition-colors ${
-                      currentPage === pageNum
-                        ? 'bg-primary text-white shadow-md'
-                        : 'border border-slate-200 hover:bg-slate-100 text-navy'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  className="p-1.5 rounded-button border border-slate-200 hover:bg-slate-100 text-navy disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Next Page"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            startIndex={startIndex}
+            endIndex={Math.min(startIndex + itemsPerPage, filteredCourts.length)}
+            totalItems={filteredCourts.length}
+            label="lapangan"
+          />
         </div>
       )}
 

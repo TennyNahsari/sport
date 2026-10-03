@@ -1,10 +1,7 @@
 import { Platform } from 'react-native';
 
-// Standard Backend API URL base definition
-let API_BASE_URL = 'http://localhost:5000/api';
-if (Platform.OS === 'android') {
-  API_BASE_URL = 'http://10.0.2.2:5000/api';
-}
+// Standard Backend API URL base definition (Public Server Domain)
+let API_BASE_URL = 'https://sport.tazkia.web.id/api';
 
 export const setCustomApiUrl = (url) => {
   API_BASE_URL = url;

@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db/database');
 
 // GET dashboard overview metrics
-router.get('/dashboard', async (req, res) => {
+const getReportsOverview = async (req, res) => {
   try {
     const { outlet_id } = req.query;
     const todayStr = new Date().toISOString().split('T')[0];
@@ -55,10 +55,17 @@ router.get('/dashboard', async (req, res) => {
     }
     const occupiedCourtsRes = await db.query(occupiedCourtsQuery, occupiedCourtsParams);
 
+    const totalCustRes = await db.query('SELECT COUNT(*) as count FROM customers');
+    const totalBookingsAll = await db.query("SELECT COUNT(*) as count FROM bookings WHERE LOWER(booking_status) NOT IN ('cancelled')");
+    const totalRevAll = await db.query("SELECT COALESCE(SUM(total_price), 0) as total FROM bookings WHERE LOWER(payment_status) = 'paid'");
+
     const todayBookingsCount = parseInt(todayBookingsRes.rows[0].count);
     const todayRevenue = parseInt(todayRevenueRes.rows[0].total);
     const totalCourtsCount = parseInt(totalCourtsRes.rows[0].count);
     const occupiedCourtsToday = parseInt(occupiedCourtsRes.rows[0].count);
+    const totalCustomersCount = parseInt(totalCustRes.rows[0].count);
+    const totalBookingsCount = parseInt(totalBookingsAll.rows[0].count);
+    const grandTotalRevenue = parseInt(totalRevAll.rows[0].total);
 
     const occupancyPercentage = totalCourtsCount > 0 ? Math.round((occupiedCourtsToday / totalCourtsCount) * 100) : 0;
 
@@ -122,6 +129,10 @@ router.get('/dashboard', async (req, res) => {
     res.json({
       success: true,
       data: {
+        total_revenue: grandTotalRevenue || todayRevenue,
+        total_bookings: totalBookingsCount || todayBookingsCount,
+        total_courts: totalCourtsCount,
+        total_customers: totalCustomersCount,
         todayBookings: todayBookingsCount,
         todayRevenue,
         totalCourts: totalCourtsCount,
@@ -136,7 +147,10 @@ router.get('/dashboard', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-});
+};
+
+router.get('/dashboard', getReportsOverview);
+router.get('/summary', getReportsOverview);
 
 // GET customers list
 router.get('/customers', async (req, res) => {

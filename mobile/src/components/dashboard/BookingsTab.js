@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { api, getApiUrl } from '../../services/api';
+import Pagination from '../Pagination';
 
 export default function BookingsTab({ currentUser }) {
   const [bookings, setBookings] = useState([]);
@@ -21,6 +22,12 @@ export default function BookingsTab({ currentUser }) {
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(bookings.length / itemsPerPage) || 1;
+  const paginatedBookings = bookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Status Change Modal State
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -204,7 +211,7 @@ export default function BookingsTab({ currentUser }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {bookings.map((booking) => {
+          {paginatedBookings.map((booking) => {
             const badge = getStatusBadge(booking.payment_status || booking.booking_status);
             const proofUrl = getFullProofUrl(booking.payment_proof);
             const hasProof = Boolean(proofUrl);
@@ -287,6 +294,15 @@ export default function BookingsTab({ currentUser }) {
               </View>
             );
           })}
+          
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={bookings.length}
+            itemsPerPage={itemsPerPage}
+            label="booking"
+          />
         </ScrollView>
       )}
 

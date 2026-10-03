@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { api, getApiUrl } from '../../services/api';
+import Pagination from '../Pagination';
 
 export default function UsersTab({ currentUser }) {
   const isAdmin = (currentUser?.role || '').toLowerCase() === 'admin';
@@ -22,6 +23,10 @@ export default function UsersTab({ currentUser }) {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -145,6 +150,9 @@ export default function UsersTab({ currentUser }) {
     return matchSearch && matchRole;
   });
 
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   if (!isAdmin) {
     return (
       <View style={styles.restrictedCard}>
@@ -210,7 +218,7 @@ export default function UsersTab({ currentUser }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {filteredUsers.map((u) => {
+          {paginatedUsers.map((u) => {
             const isUserAdmin = (u.role || '').toLowerCase() === 'admin';
 
             return (
@@ -246,6 +254,15 @@ export default function UsersTab({ currentUser }) {
               </View>
             );
           })}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredUsers.length}
+            itemsPerPage={itemsPerPage}
+            label="staf"
+          />
         </ScrollView>
       )}
 

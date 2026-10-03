@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { api, getApiUrl } from '../../services/api';
+import Pagination from '../Pagination';
 
 export default function CourtsTab({ currentUser }) {
   const isAdmin = (currentUser?.role || '').toLowerCase() === 'admin';
@@ -25,6 +26,10 @@ export default function CourtsTab({ currentUser }) {
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSportFilter, setSelectedSportFilter] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Modal Form State
   const [showModal, setShowModal] = useState(false);
@@ -156,6 +161,9 @@ export default function CourtsTab({ currentUser }) {
     return matchSearch && matchSport;
   });
 
+  const totalPages = Math.ceil(filteredCourts.length / itemsPerPage) || 1;
+  const paginatedCourts = filteredCourts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <View style={styles.container}>
       
@@ -212,7 +220,7 @@ export default function CourtsTab({ currentUser }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {filteredCourts.map((court) => {
+          {paginatedCourts.map((court) => {
             const defaultImg = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80';
             const imgUri = court.image_url && court.image_url.startsWith('http') ? court.image_url : defaultImg;
 
@@ -266,6 +274,15 @@ export default function CourtsTab({ currentUser }) {
               </View>
             );
           })}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredCourts.length}
+            itemsPerPage={itemsPerPage}
+            label="lapangan"
+          />
         </ScrollView>
       )}
 

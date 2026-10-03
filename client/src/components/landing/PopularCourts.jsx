@@ -1,12 +1,19 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import CourtCard from './CourtCard';
 import { Sparkles, Calendar, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
+import Pagination from '../common/Pagination';
 
 export default function PopularCourts({ courts, availabilityMap, selectedDate, setSelectedDate, onSelectSlot, onBookCourt }) {
   const { t } = useLanguage();
   const todayStr = new Date().toISOString().split('T')[0];
   const scrollContainerRef = useRef(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(courts.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCourts = courts.slice(startIndex, startIndex + itemsPerPage);
 
   // Horizontal Side-to-Side Pagination Controls
   const handleScrollLeft = () => {
@@ -82,24 +89,36 @@ export default function PopularCourts({ courts, availabilityMap, selectedDate, s
             <p className="font-bold text-navy">{t('noCourtsMatch')}</p>
           </div>
         ) : (
-          <div
-            ref={scrollContainerRef}
-            className="flex space-x-6 overflow-x-auto custom-scrollbar pb-6 pt-2 snap-x snap-mandatory"
-          >
-            {courts.map((court) => (
-              <div
-                key={court.id}
-                className="w-[300px] sm:w-[360px] flex-shrink-0 snap-start"
-              >
-                <CourtCard
-                  court={court}
-                  slots={availabilityMap[court.id]?.slots}
-                  selectedDate={selectedDate}
-                  onSelectSlot={onSelectSlot}
-                  onBookCourt={onBookCourt}
-                />
-              </div>
-            ))}
+          <div className="space-y-4">
+            <div
+              ref={scrollContainerRef}
+              className="flex space-x-6 overflow-x-auto custom-scrollbar pb-6 pt-2 snap-x snap-mandatory"
+            >
+              {paginatedCourts.map((court) => (
+                <div
+                  key={court.id}
+                  className="w-[300px] sm:w-[360px] flex-shrink-0 snap-start"
+                >
+                  <CourtCard
+                    court={court}
+                    slots={availabilityMap[court.id]?.slots}
+                    selectedDate={selectedDate}
+                    onSelectSlot={onSelectSlot}
+                    onBookCourt={onBookCourt}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              startIndex={startIndex}
+              endIndex={Math.min(startIndex + itemsPerPage, courts.length)}
+              totalItems={courts.length}
+              label="lapangan"
+            />
           </div>
         )}
 

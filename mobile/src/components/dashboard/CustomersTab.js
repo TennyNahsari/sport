@@ -11,11 +11,16 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { getApiUrl } from '../../services/api';
+import Pagination from '../Pagination';
 
 export default function CustomersTab({ currentUser }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -81,6 +86,9 @@ export default function CustomersTab({ currentUser }) {
     (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage) || 1;
+  const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <View style={styles.container}>
       
@@ -93,7 +101,10 @@ export default function CustomersTab({ currentUser }) {
           placeholder="Cari nama, No. HP, atau email..."
           placeholderTextColor="#94A3B8"
           value={searchTerm}
-          onChangeText={setSearchTerm}
+          onChangeText={(text) => {
+            setSearchTerm(text);
+            setCurrentPage(1);
+          }}
         />
       </View>
 
@@ -110,7 +121,7 @@ export default function CustomersTab({ currentUser }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {filteredCustomers.map((c) => (
+          {paginatedCustomers.map((c) => (
             <View key={c.id} style={styles.customerCard}>
               
               {/* Top Row Profile */}
@@ -155,6 +166,15 @@ export default function CustomersTab({ currentUser }) {
 
             </View>
           ))}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredCustomers.length}
+            itemsPerPage={itemsPerPage}
+            label="pelanggan"
+          />
         </ScrollView>
       )}
 

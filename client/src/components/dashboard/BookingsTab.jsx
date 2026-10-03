@@ -4,6 +4,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 import { getWaUrl } from '../../utils/whatsapp';
 import PrintReceiptModal from './PrintReceiptModal';
+import Pagination from '../common/Pagination';
 
 export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly, currentUser }) {
   const { t } = useLanguage();
@@ -557,35 +558,16 @@ export default function BookingsTab({ onOpenManualBooking, filterPaymentOnly, cu
             </div>
 
             {/* Pagination Controls Footer */}
-            {totalItems > 0 && (
-              <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
-                <div>
-                  {t('showingData')} <span className="font-bold text-navy">{startIndex + 1}</span> {t('to')} <span className="font-bold text-navy">{Math.min(startIndex + itemsPerPage, totalItems)}</span> {t('of')} <span className="font-bold text-navy">{totalItems}</span> {t('bookingsCount')}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    className="p-1.5 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  <span className="font-bold text-navy px-2">
-                    {currentPage} / {totalPages}
-                  </span>
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    className="p-1.5 rounded bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              startIndex={startIndex}
+              endIndex={Math.min(startIndex + itemsPerPage, totalItems)}
+              totalItems={totalItems}
+              label={t('bookingsCount')}
+            />
           </div>
         )}
       </div>

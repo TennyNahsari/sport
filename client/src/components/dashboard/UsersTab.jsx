@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserCog, PlusCircle, Edit3, Trash2, Search, Building2, ShieldCheck, UserCheck, ShieldAlert, CheckCircle2, XCircle, FileSpreadsheet, KeyRound, Lock, Users } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
+import Pagination from '../common/Pagination';
 
 export default function UsersTab({ currentAdminUser }) {
   const { t, lang } = useLanguage();
@@ -163,6 +164,9 @@ export default function UsersTab({ currentAdminUser }) {
     exportToCsv(`Report_Users_${todayStr}`, filteredUsers, headers);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   const filteredUsers = users.filter((u) => {
     const matchSearch = !searchQuery || 
       u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -172,6 +176,10 @@ export default function UsersTab({ currentAdminUser }) {
     const matchOutlet = !outletFilter || String(u.outlet_id) === String(outletFilter);
     return matchSearch && matchRole && matchOutlet;
   });
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
   // Stat Counters
   const totalUsers = users.length;
@@ -323,7 +331,7 @@ export default function UsersTab({ currentAdminUser }) {
                   <td colSpan="6" className="p-8 text-center text-slate-400">{t('noUsersFound')}</td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3.5 pl-5">
                       <div className="flex items-center space-x-2.5">
@@ -415,6 +423,17 @@ export default function UsersTab({ currentAdminUser }) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={Math.min(startIndex + itemsPerPage, filteredUsers.length)}
+          totalItems={filteredUsers.length}
+          label="staf"
+        />
       </div>
 
       {/* Add / Edit User Modal */}
