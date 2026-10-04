@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
-import { Trophy, Calendar, Search, UserCheck, Menu, X, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Calendar, Search, UserCheck, Menu, X, Globe, LayoutDashboard } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function Navbar({ activeView, setActiveView, onQuickBooking, onOpenCheckBooking }) {
   const { lang, setLang, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sportbook_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const checkUser = () => {
+      try {
+        const saved = localStorage.getItem('sportbook_user');
+        setCurrentUser(saved ? JSON.parse(saved) : null);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    checkUser();
+    window.addEventListener('storage', checkUser);
+    return () => window.removeEventListener('storage', checkUser);
+  }, [activeView]);
 
   const toggleLanguage = () => {
     setLang(lang === 'id' ? 'en' : 'id');
@@ -56,10 +78,22 @@ export default function Navbar({ activeView, setActiveView, onQuickBooking, onOp
 
             {activeView === 'customer' ? (
               <>
+                {/* Tombol Dashboard - Hanya Tampil Jika Sudah Login */}
+                {currentUser && (
+                  <button
+                    onClick={() => setActiveView('dashboard')}
+                    className="flex items-center space-x-1.5 px-3.5 py-2 rounded-button text-xs font-extrabold bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 transition-all cursor-pointer shadow-sm"
+                    title={`Dashboard (${currentUser.name || currentUser.username})`}
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-blue-400" />
+                    <span>{t('btnDashboard')}</span>
+                  </button>
+                )}
+
                 {/* Tombol Cek Booking */}
                 <button
                   onClick={onOpenCheckBooking}
-                  className="flex items-center space-x-1.5 px-3 py-2 rounded-button text-xs font-extrabold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+                  className="flex items-center space-x-1.5 px-3 py-2 rounded-button text-xs font-extrabold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
                 >
                   <Search className="w-3.5 h-3.5 text-primary" />
                   <span>{t('btnCheckBooking')}</span>
@@ -68,7 +102,7 @@ export default function Navbar({ activeView, setActiveView, onQuickBooking, onOp
                 {/* Tombol Booking Sekarang */}
                 <button
                   onClick={onQuickBooking}
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-button text-xs font-extrabold bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 transition-all hover:scale-105"
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded-button text-xs font-extrabold bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 transition-all hover:scale-105 cursor-pointer"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>{t('btnBookNow')}</span>
@@ -77,7 +111,7 @@ export default function Navbar({ activeView, setActiveView, onQuickBooking, onOp
             ) : (
               <button
                 onClick={() => setActiveView('customer')}
-                className="flex items-center space-x-2 px-3.5 py-2 rounded-button text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+                className="flex items-center space-x-2 px-3.5 py-2 rounded-button text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
               >
                 <UserCheck className="w-4 h-4 text-sportgreen" />
                 <span>{t('btnCustomerView')}</span>
@@ -117,6 +151,17 @@ export default function Navbar({ activeView, setActiveView, onQuickBooking, onOp
           </div>
 
           <div className="pt-2">
+            {/* Tombol Dashboard Mobile - Hanya Tampil Jika Login */}
+            {currentUser && (
+              <button
+                onClick={() => { setMobileMenuOpen(false); setActiveView('dashboard'); }}
+                className="w-full py-2.5 px-3 bg-blue-600/20 text-blue-300 border border-blue-500/40 rounded-button text-xs font-extrabold flex items-center justify-center space-x-2 mb-2 cursor-pointer"
+              >
+                <LayoutDashboard className="w-4 h-4 text-blue-400" />
+                <span>{t('btnDashboard')} ({currentUser.username})</span>
+              </button>
+            )}
+
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenCheckBooking(); }}
               className="w-full py-2.5 px-3 bg-slate-800 text-white rounded-button text-xs font-bold flex items-center justify-center space-x-1 mb-2"
@@ -139,3 +184,4 @@ export default function Navbar({ activeView, setActiveView, onQuickBooking, onOp
     </nav>
   );
 }
+
