@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, Edit3, Trash2, ShieldAlert, CheckCircle, XCircle, FileSpreadsheet, Download, Building2, MapPin, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { PlusCircle, Edit3, Trash2, ShieldAlert, CheckCircle, XCircle, FileSpreadsheet, Download, Building2, MapPin, Search, ChevronLeft, ChevronRight, Activity, Upload, Link, X } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { exportToCsv } from '../../utils/excelExport';
 import Pagination from '../common/Pagination';
@@ -30,8 +30,11 @@ export default function CourtsTab({ currentUser }) {
   const [name, setName] = useState('');
   const [pricePerHour, setPricePerHour] = useState(80000);
   const [imageUrl, setImageUrl] = useState('');
+  const [imageTab, setImageTab] = useState('upload'); // 'upload' | 'url'
   const [facilitiesStr, setFacilitiesStr] = useState('Indoor, AC, Wooden Floor');
   const [status, setStatus] = useState('active');
+
+  const fileInputRef = useRef(null);
 
   const fetchData = () => {
     setLoading(true);
@@ -94,8 +97,10 @@ export default function CourtsTab({ currentUser }) {
     setName('');
     setPricePerHour(80000);
     setImageUrl('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80');
+    setImageTab('upload');
     setFacilitiesStr('Indoor, AC, Wooden Floor');
     setStatus('active');
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setShowModal(true);
   };
 
@@ -106,9 +111,32 @@ export default function CourtsTab({ currentUser }) {
     setName(court.name);
     setPricePerHour(court.price_per_hour);
     setImageUrl(court.image_url);
+    setImageTab(court.image_url && court.image_url.startsWith('http') ? 'url' : 'upload');
     setFacilitiesStr(Array.isArray(court.facilities) ? court.facilities.join(', ') : '');
     setStatus(court.status);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setShowModal(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Pilih file gambar berformat PNG, JPG, JPEG, WebP, atau GIF.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran file gambar maksimal 10MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e) => {
@@ -326,6 +354,10 @@ export default function CourtsTab({ currentUser }) {
                         src={court.image_url || 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80'}
                         alt={court.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80';
+                        }}
                       />
                       <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-navy/85 text-white text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-xs">
                         {court.sport_name}
@@ -495,14 +527,109 @@ export default function CourtsTab({ currentUser }) {
                 />
               </div>
 
+              {/* Court Image (Upload File & URL Input Option) */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">{t('imageUrlLabel')}</label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-button font-medium text-navy focus:ring-2 focus:ring-primary focus:outline-none"
-                />
+                <label className="block font-bold text-slate-700 mb-1">Foto Lapangan</label>
+                
+                <div className="flex border-b border-slate-200 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setImageTab('upload')}
+                    className={`py-1.5 px-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+                      imageTab === 'upload'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload File Gambar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageTab('url')}
+                    className={`py-1.5 px-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+                      imageTab === 'url'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Link className="w-3.5 h-3.5" />
+                    <span>Input URL Gambar</span>
+                  </button>
+                </div>
+
+                {imageTab === 'upload' ? (
+                  <div className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="court-file-input"
+                    />
+                    <label
+                      htmlFor="court-file-input"
+                      className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 hover:border-primary rounded-button cursor-pointer bg-slate-50 hover:bg-blue-50/40 transition-colors text-center group"
+                    >
+                      <Upload className="w-6 h-6 text-slate-400 group-hover:text-primary mb-1 transition-colors" />
+                      <span className="text-xs font-bold text-slate-600 group-hover:text-primary">
+                        Klik untuk memilih gambar dari perangkat
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">
+                        PNG, JPG, JPEG, WebP, GIF (Maks. 10MB)
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/..."
+                      value={imageUrl && imageUrl.startsWith('data:') ? '' : imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-button font-medium text-navy focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Live Image Preview */}
+                {imageUrl ? (
+                  <div className="mt-3 relative rounded-button overflow-hidden border border-slate-200 bg-slate-100 group">
+                    <div className="text-[10px] font-bold text-slate-600 p-1.5 bg-slate-200/80 border-b border-slate-200 flex items-center justify-between">
+                      <span>Preview Foto Lapangan:</span>
+                      {imageUrl.startsWith('data:') ? (
+                        <span className="text-sportgreen font-extrabold flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> File Siap Diupload
+                        </span>
+                      ) : (
+                        <span className="text-primary font-bold truncate max-w-[200px]">{imageUrl}</span>
+                      )}
+                    </div>
+                    <div className="h-36 w-full relative">
+                      <img
+                        src={imageUrl}
+                        alt="Preview Lapangan"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrl('');
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md transition-transform hover:scale-105"
+                        title="Hapus / Reset Foto"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div>
