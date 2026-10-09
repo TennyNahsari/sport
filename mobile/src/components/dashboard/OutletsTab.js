@@ -11,6 +11,7 @@ import {
   Image,
   Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { api, getApiUrl } from '../../services/api';
 
@@ -29,6 +30,7 @@ export default function OutletsTab({ currentUser }) {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageTab, setImageTab] = useState('upload'); // 'upload' | 'url'
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('active');
 
@@ -51,6 +53,7 @@ export default function OutletsTab({ currentUser }) {
     setAddress('');
     setPhone('');
     setImageUrl('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80');
+    setImageTab('upload');
     setDescription('');
     setStatus('active');
     setShowModal(true);
@@ -62,14 +65,45 @@ export default function OutletsTab({ currentUser }) {
     setAddress(outlet.address);
     setPhone(outlet.phone || '');
     setImageUrl(outlet.image_url || '');
+    setImageTab(outlet.image_url && outlet.image_url.startsWith('http') ? 'url' : 'upload');
     setDescription(outlet.description || '');
     setStatus(outlet.status || 'active');
     setShowModal(true);
   };
 
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Izin Ditolak', 'Akses galeri foto dibutuhkan untuk mengunggah gambar outlet.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          const mimeType = asset.mimeType || 'image/jpeg';
+          const base64Data = `data:${mimeType};base64,${asset.base64}`;
+          setImageUrl(base64Data);
+        } else if (asset.uri) {
+          setImageUrl(asset.uri);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Gagal Memilih Gambar', err.message || 'Terjadi kesalahan saat memilih gambar.');
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
-      alert('Nama outlet wajib diisi.');
+      Alert.alert('Perhatian', 'Nama outlet wajib diisi.');
       return;
     }
 
@@ -97,26 +131,39 @@ export default function OutletsTab({ currentUser }) {
         setShowModal(false);
         loadOutlets();
       } else {
-        alert(data.message || 'Gagal menyimpan data outlet');
+        Alert.alert('Gagal', data.message || 'Gagal menyimpan data outlet');
       }
     } catch (err) {
-      alert('Terjadi kesalahan koneksi saat menyimpan outlet.');
+      Alert.alert('Error', 'Terjadi kesalahan koneksi saat menyimpan outlet.');
     }
   };
 
   const handleDelete = async (id, outletName) => {
-    try {
-      const baseUrl = getApiUrl();
-      const res = await fetch(`${baseUrl}/outlets/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        loadOutlets();
-      } else {
-        alert(data.message || 'Gagal menghapus outlet');
-      }
-    } catch (err) {
-      alert('Gagal menghapus outlet');
-    }
+    Alert.alert(
+      'Konfirmasi Hapus',
+      `Apakah Anda yakin ingin menghapus outlet "${outletName}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const baseUrl = getApiUrl();
+              const res = await fetch(`${baseUrl}/outlets/${id}`, { method: 'DELETE' });
+              const data = await res.json();
+              if (data.success) {
+                loadOutlets();
+              } else {
+                Alert.alert('Gagal', data.message || 'Gagal menghapus outlet');
+              }
+            } catch (err) {
+              Alert.alert('Error', 'Gagal menghapus outlet');
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (!isAdmin) {
@@ -130,6 +177,17 @@ export default function OutletsTab({ currentUser }) {
       </View>
     );
   }
+
+  const resolveImageUri = (rawUrl) => {
+    const defaultImg = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80';
+    if (!rawUrl) return defaultImg;
+    if (rawUrl.startsWith('http') || rawUrl.startsWith('data:')) return rawUrl;
+    if (rawUrl.startsWith('/uploads/')) {
+      const serverHost = getApiUrl().replace(/\/api$/, '');
+      return `${serverHost}${rawUrl}`;
+    }
+    return defaultImg;
+  };
 
   return (
     <View style={styles.container}>
@@ -164,8 +222,7 @@ export default function OutletsTab({ currentUser }) {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {outlets.map((outlet) => {
-            const defaultImg = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80';
-            const imgUri = outlet.image_url && outlet.image_url.startsWith('http') ? outlet.image_url : defaultImg;
+            const imgUri = resolveImageUri(outlet.image_url);
 
             return (
               <View key={outlet.id} style={styles.outletCard}>
@@ -263,14 +320,54 @@ export default function OutletsTab({ currentUser }) {
                   onChangeText={setPhone}
                 />
 
-                <Text style={styles.label}>URL Foto Sampul (Image URL)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="https://images.unsplash.com/..."
-                  placeholderTextColor="#94A3B8"
-                  value={imageUrl}
-                  onChangeText={setImageUrl}
-                />
+                {/* Foto Outlet Tabbed Picker */}
+                <Text style={styles.label}>Foto Outlet</Text>
+                <View style={styles.tabToggleRow}>
+                  <TouchableOpacity
+                    style={[styles.tabToggleBtn, imageTab === 'upload' && styles.tabToggleActive]}
+                    onPress={() => setImageTab('upload')}
+                  >
+                    <Text style={[styles.tabToggleText, imageTab === 'upload' && styles.tabToggleTextActive]}>
+                      📤 Upload Gambar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabToggleBtn, imageTab === 'url' && styles.tabToggleActive]}
+                    onPress={() => setImageTab('url')}
+                  >
+                    <Text style={[styles.tabToggleText, imageTab === 'url' && styles.tabToggleTextActive]}>
+                      🔗 Input URL
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {imageTab === 'upload' ? (
+                  <TouchableOpacity style={styles.pickImgBtn} onPress={handlePickImage} activeOpacity={0.8}>
+                    <Text style={styles.pickImgBtnText}>📷 Pilih Foto Dari Galeri Perangkat</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="https://images.unsplash.com/..."
+                    placeholderTextColor="#94A3B8"
+                    value={imageUrl && imageUrl.startsWith('data:') ? '' : imageUrl}
+                    onChangeText={setImageUrl}
+                  />
+                )}
+
+                {/* Image Preview Box */}
+                {imageUrl ? (
+                  <View style={styles.previewBox}>
+                    <View style={styles.previewHeader}>
+                      <Text style={styles.previewTitle}>Pratinjau Foto Outlet:</Text>
+                      <TouchableOpacity onPress={() => setImageUrl('')}>
+                        <Text style={styles.resetImgText}>✕ Hapus Foto</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Image source={{ uri: resolveImageUri(imageUrl) }} style={styles.previewImg} resizeMode="cover" />
+                  </View>
+                ) : null}
 
                 <Text style={styles.label}>Deskripsi Fasilitas</Text>
                 <TextInput
@@ -544,6 +641,76 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlignVertical: 'top',
   },
+  tabToggleRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  tabToggleBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabToggleActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  tabToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSlate,
+  },
+  tabToggleTextActive: {
+    color: COLORS.primary,
+    fontWeight: '800',
+  },
+  pickImgBtn: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  pickImgBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  previewBox: {
+    marginTop: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    backgroundColor: COLORS.surface,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: COLORS.border,
+  },
+  previewTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.navy,
+  },
+  resetImgText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.danger,
+  },
+  previewImg: {
+    width: '100%',
+    height: 110,
+  },
   saveBtn: {
     backgroundColor: COLORS.primary,
     paddingVertical: 12,
@@ -558,3 +725,4 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   }
 });
+

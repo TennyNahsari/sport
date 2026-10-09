@@ -11,6 +11,7 @@ import {
   Image,
   Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SHADOWS } from '../../constants/theme';
 import { api, getApiUrl } from '../../services/api';
 import Pagination from '../Pagination';
@@ -41,6 +42,7 @@ export default function CourtsTab({ currentUser }) {
   const [outletId, setOutletId] = useState('');
   const [pricePerHour, setPricePerHour] = useState('80000');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageTab, setImageTab] = useState('upload'); // 'upload' | 'url'
   const [facilitiesStr, setFacilitiesStr] = useState('Indoor, AC, Wooden Floor');
   const [status, setStatus] = useState('active');
 
@@ -75,6 +77,7 @@ export default function CourtsTab({ currentUser }) {
     setOutletId(outlets.length > 0 ? String(outlets[0].id) : '');
     setPricePerHour('80000');
     setImageUrl('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80');
+    setImageTab('upload');
     setFacilitiesStr('Indoor, AC, Wooden Floor');
     setStatus('active');
     setShowModal(true);
@@ -87,14 +90,45 @@ export default function CourtsTab({ currentUser }) {
     setOutletId(court.outlet_id ? String(court.outlet_id) : '');
     setPricePerHour(String(court.price_per_hour));
     setImageUrl(court.image_url || '');
+    setImageTab(court.image_url && court.image_url.startsWith('http') ? 'url' : 'upload');
     setFacilitiesStr(Array.isArray(court.facilities) ? court.facilities.join(', ') : (court.facilities || ''));
     setStatus(court.status || 'active');
     setShowModal(true);
   };
 
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Izin Ditolak', 'Akses galeri foto dibutuhkan untuk mengunggah gambar lapangan.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          const mimeType = asset.mimeType || 'image/jpeg';
+          const base64Data = `data:${mimeType};base64,${asset.base64}`;
+          setImageUrl(base64Data);
+        } else if (asset.uri) {
+          setImageUrl(asset.uri);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Gagal Memilih Gambar', err.message || 'Terjadi kesalahan saat memilih gambar.');
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
-      alert('Nama lapangan wajib diisi.');
+      Alert.alert('Perhatian', 'Nama lapangan wajib diisi.');
       return;
     }
 
@@ -125,26 +159,39 @@ export default function CourtsTab({ currentUser }) {
         setShowModal(false);
         loadData();
       } else {
-        alert(data.message || 'Gagal menyimpan data lapangan');
+        Alert.alert('Gagal', data.message || 'Gagal menyimpan data lapangan');
       }
     } catch (err) {
-      alert('Terjadi kesalahan koneksi saat menyimpan lapangan.');
+      Alert.alert('Error', 'Terjadi kesalahan koneksi saat menyimpan lapangan.');
     }
   };
 
   const handleDelete = async (id, courtName) => {
-    try {
-      const baseUrl = getApiUrl();
-      const res = await fetch(`${baseUrl}/courts/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        loadData();
-      } else {
-        alert(data.message || 'Gagal menghapus lapangan');
-      }
-    } catch (err) {
-      alert('Gagal menghapus lapangan');
-    }
+    Alert.alert(
+      'Konfirmasi Hapus',
+      `Apakah Anda yakin ingin menghapus lapangan "${courtName}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const baseUrl = getApiUrl();
+              const res = await fetch(`${baseUrl}/courts/${id}`, { method: 'DELETE' });
+              const data = await res.json();
+              if (data.success) {
+                loadData();
+              } else {
+                Alert.alert('Gagal', data.message || 'Gagal menghapus lapangan');
+              }
+            } catch (err) {
+              Alert.alert('Error', 'Gagal menghapus lapangan');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatCurrency = (val) => {
@@ -153,6 +200,17 @@ export default function CourtsTab({ currentUser }) {
       currency: 'IDR',
       maximumFractionDigits: 0
     }).format(val || 0);
+  };
+
+  const resolveImageUri = (rawUrl) => {
+    const defaultImg = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80';
+    if (!rawUrl) return defaultImg;
+    if (rawUrl.startsWith('http') || rawUrl.startsWith('data:')) return rawUrl;
+    if (rawUrl.startsWith('/uploads/')) {
+      const serverHost = getApiUrl().replace(/\/api$/, '');
+      return `${serverHost}${rawUrl}`;
+    }
+    return defaultImg;
   };
 
   const filteredCourts = courts.filter(c => {
@@ -221,8 +279,7 @@ export default function CourtsTab({ currentUser }) {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {paginatedCourts.map((court) => {
-            const defaultImg = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80';
-            const imgUri = court.image_url && court.image_url.startsWith('http') ? court.image_url : defaultImg;
+            const imgUri = resolveImageUri(court.image_url);
 
             return (
               <View key={court.id} style={styles.courtCard}>
@@ -331,8 +388,54 @@ export default function CourtsTab({ currentUser }) {
                 <Text style={styles.label}>Harga Per Jam (Rp) *</Text>
                 <TextInput style={styles.input} placeholder="80000" placeholderTextColor="#94A3B8" keyboardType="numeric" value={pricePerHour} onChangeText={setPricePerHour} />
 
-                <Text style={styles.label}>URL Foto Sampul (Image URL)</Text>
-                <TextInput style={styles.input} placeholder="https://images.unsplash.com/..." placeholderTextColor="#94A3B8" value={imageUrl} onChangeText={setImageUrl} />
+                {/* Foto Lapangan Tabbed Picker */}
+                <Text style={styles.label}>Foto Lapangan</Text>
+                <View style={styles.tabToggleRow}>
+                  <TouchableOpacity
+                    style={[styles.tabToggleBtn, imageTab === 'upload' && styles.tabToggleActive]}
+                    onPress={() => setImageTab('upload')}
+                  >
+                    <Text style={[styles.tabToggleText, imageTab === 'upload' && styles.tabToggleTextActive]}>
+                      📤 Upload Gambar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.tabToggleBtn, imageTab === 'url' && styles.tabToggleActive]}
+                    onPress={() => setImageTab('url')}
+                  >
+                    <Text style={[styles.tabToggleText, imageTab === 'url' && styles.tabToggleTextActive]}>
+                      🔗 Input URL
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {imageTab === 'upload' ? (
+                  <TouchableOpacity style={styles.pickImgBtn} onPress={handlePickImage} activeOpacity={0.8}>
+                    <Text style={styles.pickImgBtnText}>📷 Pilih Foto Dari Galeri Perangkat</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="https://images.unsplash.com/..."
+                    placeholderTextColor="#94A3B8"
+                    value={imageUrl && imageUrl.startsWith('data:') ? '' : imageUrl}
+                    onChangeText={setImageUrl}
+                  />
+                )}
+
+                {/* Image Preview Box */}
+                {imageUrl ? (
+                  <View style={styles.previewBox}>
+                    <View style={styles.previewHeader}>
+                      <Text style={styles.previewTitle}>Pratinjau Foto Lapangan:</Text>
+                      <TouchableOpacity onPress={() => setImageUrl('')}>
+                        <Text style={styles.resetImgText}>✕ Hapus Foto</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Image source={{ uri: resolveImageUri(imageUrl) }} style={styles.previewImg} resizeMode="cover" />
+                  </View>
+                ) : null}
 
                 <Text style={styles.label}>Fasilitas (Dipisah koma)</Text>
                 <TextInput style={styles.input} placeholder="Indoor, AC, Wooden Floor" placeholderTextColor="#94A3B8" value={facilitiesStr} onChangeText={setFacilitiesStr} />
@@ -648,6 +751,76 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: COLORS.navy,
+  },
+  tabToggleRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  tabToggleBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabToggleActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  tabToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSlate,
+  },
+  tabToggleTextActive: {
+    color: COLORS.primary,
+    fontWeight: '800',
+  },
+  pickImgBtn: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  pickImgBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  previewBox: {
+    marginTop: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    backgroundColor: COLORS.surface,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: COLORS.border,
+  },
+  previewTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.navy,
+  },
+  resetImgText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.danger,
+  },
+  previewImg: {
+    width: '100%',
+    height: 110,
   },
   saveBtn: {
     backgroundColor: COLORS.primary,
